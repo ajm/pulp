@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+        <script type='text/javascript' src='knockout-3.0.0.js'></script>
+        <link rel="stylesheet" href="style.css" type="text/css">
+        <link href='http://fonts.googleapis.com/css?family=Sigmar+One' rel='stylesheet' type='text/css'>
+    </head>
+
+    <body>
+        <header id="banner" class=body>
+            <h1>Pulp</h1>
+        
+            <form data-bind="submit: keyword_search">
+                <input type="search" data-bind="value: query, disable: articles().length > 0" placeholder="e.g. kernel" autofocus />
+                <select data-bind="value: article_number, disable: articles().length > 0">
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="30">30</option>
+                    <option value="40">40</option>
+                    <option value="50">50</option>
+                </select>
+                <button type="submit" data-bind="disable: articles().length > 0">submit</button>
+            </form>
+        </header>
+        
+        <article data-bind="foreach: articles" class=body>
+            <input type="checkbox" data-bind="checked: selected" style="float: left; margin-top: 5px;" />
+            <div style="margin-left: 25px; margin-bottom:25px">
+                <a class=title data-bind="attr: {href: url}, html: title" target="_blank" style="target-new: tab;"></a>
+                <p class=author data-bind="html: author" />
+                <p class=abstract data-bind="html: abstract" />
+            </div>
+        </article>
+
+        <div class=body>
+            <form data-bind="submit: linrel_search">
+                <button type="submit" data-bind="visible: articles().length > 0">next</button>
+            </form>
+            <form data-bind="submit: end_search">
+                <button type="submit" data-bind="visible: articles().length > 0">done</button>
+            </form>
+        </div>
+    </body>
+
+<script>
+    function Article(data) {
+        ko.utils.extend(this, data);
+        this.selected = ko.observable(false);
+    }
+
+    function ArticleViewModel() {
+        var self = this;
+
+        self.query = ko.observable();
+        self.article_number = ko.observable();
+        self.articles = ko.observableArray();
+
+        self.queryParams = {
+            "q": self.query,
+            //"format": "json",
+            //"full-articles": true,
+            //"kw-count": 10,
+            "article-count": self.article_number,
+            //"task-type": "m1"
+        };
+
+        // maybe there is a more javascript or knockout-like
+        // way to do this... but I have no idea...
+        self.get_selected = function() {
+            var foo = [];
+            for(var i = 0; i < self.articles().length; ++i) {
+                if(self.articles()[i].selected()) {
+                    foo.push(self.articles()[i].id);
+                }
+            }
+            console.log("selected = " + foo.toString())
+            return foo;
+        };
+
+        // i have really got no idea... but this seems to
+        // work
+        self.nextParams = function() { 
+            tmp = self.get_selected().join("&id=");
+            if(tmp != "") {
+                return "id=" + tmp;
+            }
+            return "";
+        };
+
+        self.keyword_search = function() {
+            $.get("http://127.0.0.1:8000/query", ko.toJS(self.queryParams))
+                .then(function (response) {
+                    self.articles($.map(response, function(data) {
+                        return new Article(data);
+                    }));
+                });
+            };
+
+        
+        self.linrel_search = function() {
+            $.get("http://127.0.0.1:8000/next", self.nextParams())
+                .then(function (response) {
+                    self.articles($.map(response, function(data) {
+                        return new Article(data);
+                    }));
+                    $('body').scrollTop(0);
+                });
+            };
+
+        self.end_search = function() {
+            $.get("http://127.0.0.1:8000/end")
+                .then(function() {
+                    self.articles([]);
+                });
+        };
+    }
+    
+    ko.applyBindings(new ArticleViewModel());
+</script>
+</html>
+
