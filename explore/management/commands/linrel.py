@@ -31,5 +31,12 @@ class Command(BaseCommand) :
         self.stdout.flush()
 
         save_sparse_articles(m)
+
+        self.stdout.write("Writing out %d keyword features..." % len(v.get_feature_names()), ending='')
+        self.stdout.flush()
+        with open('keywords.txt', 'w') as f :
+            for index,feature in enumerate(v.get_feature_names()) :
+                print >> f, index, ''.join([i for i in feature if ord(i) < 128])
+
         self.stdout.write("done!\n")
 
