@@ -41,6 +41,9 @@
             <form data-bind="submit: end_search">
                 <button type="submit" data-bind="visible: articles().length > 0">done</button>
             </form>
+            <form data-bind="submit: system_state">
+                <button type="submit" data-bind="visible: articles().length > 0">system</button>
+            </form>
         </div>
     </body>
 
@@ -115,7 +118,14 @@
                 .then(function() {
                     self.articles([]);
                 });
-        };
+            };
+        
+        self.system_state = function() {
+            $.get("http://127.0.0.1:8000/state")
+                .then(function(response) {
+                    console.log(response);
+                });
+            };
     }
     
     ko.applyBindings(new ArticleViewModel());

@@ -68,58 +68,33 @@ def get_top_articles(tfidfs, n) :
 
     return [ r[0] for r in ranking[:n] ]
 
-def get_top_articles_linrel(e) :
+def get_top_articles_linrel(e, filter_keyword_stats=True, filter_article_stats=True) :
     X = load_sparse_articles()
-    print "X %s" % str(X.shape)
     num_articles = X.shape[0]
     num_features = X.shape[1]
 
-    seen_articles = ArticleFeedback.objects.filter(experiment=e)
+    seen_articles = ArticleFeedback.objects.filter(experiment=e).exclude(selected=None)
 
     X_t = X[ numpy.array([ a.article.id for a in seen_articles ]) ]
     X_tt = X_t.transpose()
 
-    print "X_t %s\nX_tt %s" % (str(X_t.shape), str(X_tt.shape))
-
     mew = 0.5
     I = mew * scipy.sparse.identity(num_features, format='dia')
     
-    print "I %s" % str(I.shape)
-
-    #A = (X * ((X_tt * X_t) + I).todense().getI()) * X_tt
-    #A = X * (((X_tt * X_t) + I).todense().getI() * X_tt)
     W = spsolve((X_tt * X_t) + I, X_tt)
     A = X * W
 
-    print "A %s" % str(A.shape)
-
     Y_t = numpy.matrix([ 1.0 if a.selected else 0.0 for a in seen_articles ]).transpose()
 
-    print "Y_t %s" % str(Y_t.shape)
-
     tmpA = numpy.array(A.todense()) 
-    #print "tmpA %s" % str(tmpA.shape)
     normL2 = numpy.matrix(numpy.sqrt(numpy.sum(tmpA * tmpA, axis=1))).transpose()
-    #normalize(A, norm='l2', copy=False)
 
-    print "normL2 %s" % str(normL2.shape)
-
-    #print "normL2 %s" % str(normL2.shape)
-
-    # XXX in theory W * Y_t is the keyword weights
-    
-    print "W %s" % str(W.shape)
+    # W * Y_t is the keyword weights
     K = W * Y_t
 
-    print "K %s" % str(K.shape)
-
     tmp = (A * Y_t)
-    print "tmp %s" % str(tmp.shape)
-    #A_norm = normalize(A, norm='l2', copy=False)
-    I_t = tmp + (0.05 * normL2)#A_norm)
-    print "I_t %s" % str(I_t.shape)
+    I_t = tmp + (0.05 * normL2)
     
-    #top_n = sorted(zip(I_t.transpose().tolist()[0], range(num_articles)), reverse=True)[:e.number_of_documents]
     seen_ids = [ a.article.id for a in seen_articles ]
     linrel_ordered = sorted(zip(I_t.transpose().tolist()[0], range(num_articles)), reverse=True)
     top_n = []
@@ -130,13 +105,7 @@ def get_top_articles_linrel(e) :
         if len(top_n) == e.number_of_documents :
             break
 
-    #print "top_n %s" % str(top_n)
-    #top_n = [ i[1] for i in top_n ]
-    #return Article.objects.filter(pk__in=top_n)
-
     id2articles = dict([ (a.id, a) for a in Article.objects.filter(pk__in=top_n) ])
-    print top_n
-    print id2articles
     top_articles = [ id2articles[i] for i in top_n ]
 
     # XXX this is temporary, for experimenting only
@@ -146,29 +115,28 @@ def get_top_articles_linrel(e) :
         used_keywords.update(i.title.split())
         used_keywords.update(i.abstract.split())
 
-    keywords = {}
+    keyword_stats = {}
     with open('keywords.txt') as f :
         for line in f :
             index,value = line.strip().split()
-            if value in used_keywords :
-                keywords[value] = K[int(index),0]**2
+            if (not filter_keyword_stats) or (value in used_keywords) :
+                keyword_stats[value] = K[int(index),0]**2
     
-    #for i in keywords :
-    #    print i, keywords[i]
-    keyword_sum = sum(keywords.values())
-    for i in keywords :
-        keywords[i] /= keyword_sum
+    keyword_sum = sum(keyword_stats.values())
+    for i in keyword_stats :
+        keyword_stats[i] /= keyword_sum
 
     # XXX this is temporary, value per article
     exploitation = dict(zip(range(num_articles), tmp.transpose().tolist()[0]))
     exploration  = dict(zip(range(num_articles), (0.05 * normL2).transpose().tolist()[0]))
 
     article_stats = {}
-    for i in top_n :
+    article_range = top_n if filter_article_stats else range(num_articles)
+
+    for i in article_range :
         article_stats[i] = (exploitation[i], exploration[i])
 
-
-    return top_articles, keywords, article_stats
+    return top_articles, keyword_stats, article_stats
 
 def get_running_experiments(sid) :
     return Experiment.objects.filter(sessionid=sid, state=Experiment.RUNNING)
@@ -327,6 +295,13 @@ def selection_query(request) :
             i['variance'] = var
 
         return Response({'articles' : article_data, 'keywords' : keywords})
+
+@api_view(['GET'])
+def system_state(request) :
+    if request.method == 'GET' :
+        e = get_experiment(request.session.session_key)
+        _, keyword_stats, article_stats = get_top_articles_linrel(e, filter_keyword_stats=False, filter_article_stats=False)
+        return Response({'articles' : article_stats, 'keywords' : keyword_stats})
 
 @api_view(['GET'])
 def end_search(request) :

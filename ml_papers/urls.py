@@ -21,6 +21,7 @@ urlpatterns = patterns('',
     #url(r'^logout', views.logout_view),
     url(r'^query', views.textual_query),
     url(r'^next', views.selection_query),
+    url(r'^state', views.system_state),
     url(r'^end', views.end_search),
 )
 
