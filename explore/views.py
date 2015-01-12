@@ -30,6 +30,7 @@ from nltk.stem import SnowballStemmer
 from sklearn.preprocessing import normalize
 from scipy.sparse.linalg import spsolve
 
+import collections
 import sys
 import random
 import operator
@@ -119,7 +120,7 @@ def get_top_articles_tfidf(query_terms, n) :
 
     return [ articles[r[0]] for r in ranking[:n] ]
 
-def get_top_articles_linrel(e, filter_keyword_stats=True, filter_article_stats=True) :
+def get_top_articles_linrel(e, linrel_start, linrel_count) :
     X = load_sparse_articles()
     num_articles = X.shape[0]
     num_features = X.shape[1]
@@ -144,16 +145,18 @@ def get_top_articles_linrel(e, filter_keyword_stats=True, filter_article_stats=T
     K = W * Y_t
 
     tmp = (A * Y_t)
+    #I_t = tmp
     I_t = tmp + (0.05 * normL2)
     
     seen_ids = [ a.article.id for a in seen_articles ]
     linrel_ordered = sorted(zip(I_t.transpose().tolist()[0], range(num_articles)), reverse=True)
     top_n = []
 
-    for i in linrel_ordered :
+    for i in linrel_ordered[linrel_start:] :
         if i[1] not in seen_ids :
             top_n.append(i[1])
-        if len(top_n) == e.number_of_documents :
+
+        if len(top_n) == linrel_count :
             break
 
     id2articles = dict([ (a.id, a) for a in Article.objects.filter(pk__in=top_n) ])
@@ -161,17 +164,22 @@ def get_top_articles_linrel(e, filter_keyword_stats=True, filter_article_stats=T
 
     # XXX this is temporary, for experimenting only
     #     and needs to be stored in the database
-    used_keywords = set()
+    stemmer = SnowballStemmer('english')
+
+    used_keywords = collections.defaultdict(list)
     for i in top_articles :
-        used_keywords.update(i.title.split())
-        used_keywords.update(i.abstract.split())
+        for word,stem in [ (word,stemmer.stem(word)) for word in i.title.split() + i.abstract.split() ] :
+            used_keywords[stem].append(word)
 
     keyword_stats = {}
     with open('keywords.txt') as f :
         for line in f :
-            index,value = line.strip().split()
-            if (not filter_keyword_stats) or (value in used_keywords) :
-                keyword_stats[value] = K[int(index),0]**2
+            index,word = line.strip().split()
+            if word in used_keywords :
+                value = K[int(index),0]**2
+
+                for key in used_keywords[word] :
+                    keyword_stats[key] = value
     
     keyword_sum = sum(keyword_stats.values())
     for i in keyword_stats :
@@ -182,9 +190,8 @@ def get_top_articles_linrel(e, filter_keyword_stats=True, filter_article_stats=T
     exploration  = dict(zip(range(num_articles), (0.05 * normL2).transpose().tolist()[0]))
 
     article_stats = {}
-    article_range = top_n if filter_article_stats else range(num_articles)
 
-    for i in article_range :
+    for i in top_n :
         article_stats[i] = (exploitation[i], exploration[i])
 
     return top_articles, keyword_stats, article_stats
@@ -310,6 +317,7 @@ def selection_query(request) :
         # ?id=x&id=y&id=z
         try :
             selected_documents = [ int(i) for i in request.GET.getlist('id') ]
+
         except ValueError :
             return Response(status=status.HTTP_404_NOT_FOUND)
         
@@ -320,12 +328,11 @@ def selection_query(request) :
 
         # get documents with ML algorithm 
         # remember to exclude all the articles that the user has already been shown
-        all_articles = get_unseen_articles(e)
-        #rand_articles = random.sample(all_articles, e.number_of_documents)
-        rand_articles, keywords, article_stats = get_top_articles_linrel(e)
+#        all_articles = get_unseen_articles(e)
+        rand_articles, keywords, article_stats = get_top_articles_linrel(e, linrel_start=0, linrel_count=e.number_of_documents)
 
-        print "%d articles left to choose from" % len(all_articles)
-        print "%d articles found (%s)" % (len(rand_articles), ','.join([str(a.id) for a in rand_articles]))
+#        print "%d articles left to choose from" % len(all_articles)
+        print "%d articles (%s)" % (len(rand_articles), ','.join([str(a.id) for a in rand_articles]))
 
         # create new experiment iteration
         # save new documents to current experiment iteration
@@ -347,9 +354,18 @@ def selection_query(request) :
 def system_state(request) :
     if request.method == 'GET' :
         e = get_experiment(request.session.session_key)
-        _, keyword_stats, article_stats = get_top_articles_linrel(e, filter_keyword_stats=False, filter_article_stats=False)
-        serializer = ArticleSerializer(Article.objects.all(), many=True)
-    
+        try :
+            start = request.GET['start']
+            count = request.GET['count']
+        
+        except KeyError :
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        print "start = %d, count = %d" % (start, count)
+
+        articles, keyword_stats, article_stats = get_top_articles_linrel(e, linrel_start=start, linrel_count=count)
+        serializer = ArticleSerializer(articles, many=True)    
+
         return Response({'article_data' : article_stats, 'keywords' : keyword_stats, 'all_articles' : serializer.data})
 
 @api_view(['GET'])
