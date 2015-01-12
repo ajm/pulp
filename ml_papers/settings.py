@@ -68,6 +68,13 @@ ROOT_URLCONF = 'ml_papers.urls'
 
 WSGI_APPLICATION = 'ml_papers.wsgi.application'
 
+TEMPLATE_DIRS = (
+    os.path.join(BASE_DIR, 'templates'),
+)
+
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, 'static'),
+)
 
 # Database
 # https://docs.djangoproject.com/en/1.6/ref/settings/#databases

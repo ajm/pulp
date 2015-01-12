@@ -13,11 +13,8 @@
 # You should have received a copy of the GNU General Public License
 # along with PULP.  If not, see <http://www.gnu.org/licenses/>.
 
-#from django.contrib.auth.models import User #, Group
-#from django.contrib.auth import logout
 from django.db.models import Q
-#from rest_framework import viewsets
-#from explore.serializers import UserSerializer
+from django.shortcuts import render
 
 from rest_framework import status
 from rest_framework import generics
@@ -29,8 +26,8 @@ from explore.models import Article, ArticleTFIDF, Experiment, ExperimentIteratio
 from explore.serializers import ArticleSerializer
 from explore.utils import *
 
+from nltk.stem import SnowballStemmer
 from sklearn.preprocessing import normalize
-
 from scipy.sparse.linalg import spsolve
 
 import sys
@@ -66,11 +63,22 @@ def logout_view(request):
     #logout(request)
     return Response(status=status.HTTP_200_OK)
 
-def get_top_articles(tfidfs, n) :
+def get_top_articles_tfidf_old(query_terms, n) :
     """
     return top n articles using tfidf terms,
     ranking articles using okapi_bm25
     """
+
+    try :
+        tfidf_query = reduce(operator.or_, [ Q(term=t) for t in query_terms ])
+        tfidfs = ArticleTFIDF.objects.select_related('article').filter(tfidf_query)
+        #articles = get_top_articles(tfidfs, num_articles)
+        #print "%d articles found (%s)" % (len(articles), ','.join([str(a.id) for a in articles]))
+    
+    except ArticleTFIDF.DoesNotExist :
+        print "no articles found containing search terms"
+        return []
+
     tmp = {}
 
     for tfidf in tfidfs :
@@ -82,6 +90,34 @@ def get_top_articles(tfidfs, n) :
     ranking = sorted(tmp.items(), key=lambda x : x[1], reverse=True)
 
     return [ r[0] for r in ranking[:n] ]
+
+# query terms - a list of stemmed query words
+# n - the number of articles to return
+def get_top_articles_tfidf(query_terms, n) :
+    tfidf = load_sparse_tfidf()
+    features = load_features()
+    articles = Article.objects.all()
+
+    tmp = {}
+
+    for qt in query_terms :
+        if qt not in features :
+            continue
+
+        findex = features[qt]
+
+        #print numpy.nonzero(tfidf[:, findex])
+
+        for aindex in numpy.nonzero(tfidf[:, findex])[0] :
+            akey = aindex.item()
+            if akey not in tmp :
+                tmp[akey] = 1.0
+
+            tmp[akey] *= tfidf[aindex,findex]
+
+    ranking = sorted(tmp.items(), key=lambda x : x[1], reverse=True)
+
+    return [ articles[r[0]] for r in ranking[:n] ]
 
 def get_top_articles_linrel(e, filter_keyword_stats=True, filter_article_stats=True) :
     X = load_sparse_articles()
@@ -221,7 +257,10 @@ def textual_query(request) :
             return Response(status=status.HTTP_404_NOT_FOUND)
         
         query_string = request.GET['q']
-        query_terms = query_string.lower().split()
+        #query_terms = query_string.lower().split()
+        
+        stemmer = SnowballStemmer('english')
+        query_terms = [ stemmer.stem(term) for term in query_string.lower().split() ]
 
         print "query: %s" % str(query_terms)
 
@@ -237,16 +276,9 @@ def textual_query(request) :
         e = create_experiment(request.session.session_key, None, num_articles) #request.user, num_articles)
 
         # get documents with TFIDF-based ranking 
-        try :
-            tfidf_query = reduce(operator.or_, [ Q(term=t) for t in query_terms ])
-            tfidfs = ArticleTFIDF.objects.select_related('article').filter(tfidf_query)
-            articles = get_top_articles(tfidfs, num_articles)
-            print "%d articles found (%s)" % (len(articles), ','.join([str(a.id) for a in articles]))
+        #articles = get_top_articles_tfidf_old(query_terms, num_articles)
+        articles = get_top_articles_tfidf(query_terms, num_articles)
 
-        except ArticleTFIDF.DoesNotExist :
-            print "no articles found containing search terms"
-            articles = []
-        
         # add random articles if we don't have enough
         fill_count = num_articles - len(articles)
         if fill_count :
@@ -316,7 +348,9 @@ def system_state(request) :
     if request.method == 'GET' :
         e = get_experiment(request.session.session_key)
         _, keyword_stats, article_stats = get_top_articles_linrel(e, filter_keyword_stats=False, filter_article_stats=False)
-        return Response({'articles' : article_stats, 'keywords' : keyword_stats})
+        serializer = ArticleSerializer(Article.objects.all(), many=True)
+    
+        return Response({'article_data' : article_stats, 'keywords' : keyword_stats, 'all_articles' : serializer.data})
 
 @api_view(['GET'])
 def end_search(request) :
@@ -325,4 +359,12 @@ def end_search(request) :
         e.state = Experiment.COMPLETE
         e.save()
         return Response(status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def index(request) :
+    return render(request, 'index.html')
+
+@api_view(['GET'])
+def visualization(request) :
+    return render(request, 'visualization.html')
 

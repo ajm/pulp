@@ -36,7 +36,7 @@ class Command(BaseCommand) :
         articles = Article.objects.all()
 
         # run tfidf
-        v = TfidfVectorizer(min_df=1, stop_words=get_stop_words())
+        v = TfidfVectorizer(min_df=2, stop_words=get_stop_words())
 
         self.stdout.write("Running TFIDF on %d articles... " % \
                 len(articles), ending='')
@@ -51,9 +51,23 @@ class Command(BaseCommand) :
         progress_divisor = float(len(articles)) / 100.0
         progress_string = "Writing ArticleTFIDF table (%d documents, %d features)... " % \
             (len(articles), len(features))
+        
+        
+        print progress_string
+        
+
+        save_sparse_tfidf(m)
+        save_features(dict([ (y,x) for x,y in enumerate(features) ]))
+        
+        self.stdout.write("done\n")
+        return
+        
+
+
         self.stdout.write(progress_string + "0.00%%", ending='')
         self.stdout.flush()
 
+        #tfidfs = []
         for aindex,article in enumerate(articles) :
             tfidfs = []
             
@@ -70,6 +84,10 @@ class Command(BaseCommand) :
             ArticleTFIDF.objects.bulk_create(tfidfs)
             self.stdout.write("\r" + progress_string + ("%.2f%%" % ((aindex+1) / progress_divisor)), ending='')
             self.stdout.flush()
+
+        #self.stdout.write("\nthis might take a while...\n")
+        #self.stdout.flush()
+        #ArticleTFIDF.objects.bulk_create(tfidfs)
 
         self.stdout.write("\r" + progress_string + "done!  \n")
 

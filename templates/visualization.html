@@ -1,0 +1,155 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+
+        <script src="{% static 'js/jquery.js' %}"></script>
+        <script src="{% static 'js/jquery-ui.min.js' %}"></script>
+        <script src="{% static 'bootstrap/js/bootstrap.min.js' %}"></script>
+        <script src="{% static 'js/mustache.js' %}"></script>
+        <script src="{% static 'js/waypoints.min.js' %}"></script>
+       
+        <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}" />
+        <link rel="stylesheet" href="{% static 'bootstrap-select/bootstrap-select.min.css' %}" />
+        <link rel="stylesheet" href="{% static 'font-awesome/css/font-awesome.min.css' %}" />
+        <link rel="stylesheet" href="{% static 'css/layout.css' %}" />
+        <link rel="stylesheet" href="{% static 'css/animate.css' %}" />
+
+    </head>
+    <body class="body-coordinates">
+    {% verbatim %}
+        <div class="layer loading-layer">
+            <div class="loading-results">
+                <i class="fa fa-cog fa-spin"></i>
+            </div>
+        </div>
+
+        <div class="layer bubble-layer" style="z-index: 999; opacity: 0">
+        </div>
+
+        <p>
+            <button class="visualization-info-trigger animated bounceInLeft" data-toggle="modal" data-target="#visualization-info-modal"><i class="fa fa-question"></i></button>
+        </p>
+
+        <div class="visualization-container">
+        </div>
+
+        <div class="visualization-over-container">
+            <h2 class="text-center">No more interesting articles to show you</h2>
+        </div>
+
+        <!-- INFO MODAL -->
+
+         <div class="modal fade" id="visualization-info-modal" tabindex="-1" role="dialog" aria-labelledby="visualization-info-modal" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i class="fa fa-times"></i></button>
+                <h4 class="modal-title">About the visualization</h4>
+              </div>
+              <div class="modal-body">
+                    <h4>Visuals</h4>
+                    <div style="height: 75px; width: 330px; margin: 0px auto 20px auto;">
+                        <a class="dummy-bubble" style="float: left; width: 30px; height: 30px; top: 20px">
+                        </a>
+                        <div style="border-bottom: 2px dotted rgb(210,210,210); width: 200px; height: 2px; float: left; position: relative; top: 35px; margin: 0px 10px;" id="dummy-divider">
+                        </div>
+                        <a class="dummy-bubble" style="float: left; width: 60px; height: 60px; top: 5px">
+                        </a>
+                    </div>
+                    <p>
+                        The radius of the ball indicates articles exploitation value (higher exploitation value, higher radius). As you scroll down the exploitation value of the articles will decrease, showing less and less important articles to you.
+                    </p>
+                    <p>
+                        The articles are grouped by their exploitation value. The highest ten values are the top most articles and groups with lower exploitation value are below it. Grouping is visualized by giving each group a different color. Inside the groups the articles with the highest exploitation values are in the center and articles with lower values by the side.
+                    
+                    </p>
+                    <p>
+                        Bringing your mouse over the ball, a popover appers showing articles title and description. Clicking the ball will open the article itself.
+                    </p>
+                    <hr/>
+                    <h4>Keywords</h4>
+                    <div style="width: 200px; float: left; text-align: center; overflow: hidden">
+                        <span class="keyword">data</span>
+                        <span class="keyword">algorithm</span>
+                        <span class="keyword">optimal</span>
+                        <span class="keyword">problem</span>
+                        <span class="keyword">estimation</span>
+                    </div>
+                    <p>
+                        The articles in the same group share common keywords. These keywords are displayed on the right side of the group. Bring your mouse over a keyword to see which articles share it and in which context it can be found in the abstracts.
+                    </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="abstract-highlights-container">
+        </div>
+
+        <!-- TEMPLATES -->
+
+        <script type="text/html" id="abstract-highlight-template">
+            {{#abstract_highlights}}
+                <div class="abstract-highlight animated bounceIn">  
+                    {{{.}}}
+                </div>
+            {{/abstract_highlights}}
+        </script>
+
+        <script type="text/html" id="cluster-group-template">
+            <div class="cluster-group">
+                {{#cluster_groups}}
+                    <div class="cluster">
+                        <div class="cluster-keywords">
+                            <div class="cluster-keywords-indicator" data-group="{{counter}}" style="width:{{width}}px; height: {{height}}px">
+                                <a href="{{middle.link}}" target="blank" class="article-bubble" style="top: {{middle.visual.y}}px; left: {{middle.visual.x}}px; width: {{middle.visual.width}}px; height: {{middle.visual.height}}px; background-color: rgb({{middle.visual.color}})" data-container="body" data-title="{{middle.title}}" data-toggle="popover" data-placement="top" data-html="true" data-content="{{middle.abstract_synopsis}}" data-article-id="{{middle.id}}"></a>
+
+                                {{#surround}}
+                                    <a href="{{link}}" target="blank" class="article-bubble" style="top: {{visual.y}}px; left: {{visual.x}}px; width: {{visual.width}}px; height: {{visual.height}}px; background-color: rgb({{visual.color}})" data-container="body" data-title="{{title}}" data-toggle="popover" data-placement="top" data-html="true" data-content="{{abstract_synopsis}}" data-article-id="{{id}}"></a>
+                                {{/surround}}
+                            </div>
+                            <div class="cluster-keywords-container">
+
+                                <div class="cluster-top" style="background-color: rgb({{color}})">
+                                    <span style="font-size: 10px; text-transform: uppercase">top</span>
+                                    <p>{{counter}}</p>
+                                </div>
+
+                                <h4>Common keywords</h4>
+                                {{#common_keywords}}
+                                    <span class="keyword" style="background-color: rgb({{color}})" data-group="{{counter}}">{{keyword}}</span> 
+                                {{/common_keywords}}
+                                <!--<h4 style="margin-top: 15px">Exploration</h4>
+                                <div class="color-palet" style="font-style: normal">
+                                    <div class="color-palet-middle" style="width: 100%;
+                                        background-image: -webkit-gradient(
+                                            linear,
+                                            right top,
+                                            left top,
+                                            color-stop(0, rgb({{color}})),
+                                            color-stop(1, rgba(255,255,255,0))
+                                        );
+                                        background-image: -o-linear-gradient(left, rgb({{color}}) 0%, rgba(255,255,255,0) 100%);
+                                        background-image: -moz-linear-gradient(left, rgb({{color}}) 0%, rgba(255,255,255,0) 100%);
+                                        background-image: -webkit-linear-gradient(left, rgb({{color}}) 0%, rgba(255,255,255,0) 100%);
+                                        background-image: -ms-linear-gradient(left, rgb({{color}}) 0%, rgba(255,255,255,0) 100%);
+                                        background-image: linear-gradient(to left, rgb({{color}}) 0%, rgba(255,255,255,0) 100%);
+                                    ">
+                                        <div style="width: 33%;" class="color-palet-divider" data-toggle="tooltip" data-placement="top" title="High exploration"></div>
+                                        <div style="width: 34%;" class="color-palet-divider" data-toggle="tooltip" data-placement="top" title="Medium exploration"></div>
+                                        <div style="width: 33%;" class="color-palet-divider" data-toggle="tooltip" data-placement="top" title="Low exploration"></div>
+                                    </div>
+                                </div>-->
+                            </div>
+                        </div>
+                    </div>
+                {{/cluster_groups}}
+            </div>
+        </script>
+    {% endverbatim %}
+        <script src="{% static 'js/visualization_app.js' %}"></script>
+	</body>
+</html>
+

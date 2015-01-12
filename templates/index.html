@@ -1,0 +1,205 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html ng-app="SearchApp">
+    <head>
+        <meta charset="utf-8" />
+
+        <script src="{% static 'js/jquery.js' %}"></script>
+        <script src="{% static 'js/jquery-ui.min.js' %}"></script>
+        <script src="{% static 'js/angular.js' %}"></script>
+        <script src="{% static 'bootstrap/js/bootstrap.min.js' %}"></script>
+        <script src="{% static 'bootstrap-select/bootstrap-select.min.js' %}"></script>
+        <script src="{% static 'js/waypoints.min.js' %}"></script>
+        <script src="{% static 'js/search_ui.js' %}"></script>
+        <script src="{% static 'js/search_app.js' %}"></script>
+       
+        <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}" />
+        <link rel="stylesheet" href="{% static 'bootstrap-select/bootstrap-select.min.css' %}" />
+        <link rel="stylesheet" href="{% static 'font-awesome/css/font-awesome.min.css' %}" />
+        <link rel="stylesheet" href="{% static 'css/layout.css' %}" />
+        <link rel="stylesheet" href="{% static 'css/animate.css' %}" />
+
+    </head>
+    {% verbatim %}
+    <body ng-controller="SearchController">
+
+        <!-- SEARCH FORM -->
+
+        <div class="layer">
+            <div class="loading-results">
+                <i class="fa fa-cog fa-spin"></i>
+            </div>
+        </div>
+
+        <div id="search-form-container">
+            <div class="wrapper">
+                <form role="form">
+                     <div class="input-group" id="search-form-elements">
+                        <input id="search-keyword" type="text" class="form-control" ng-model="search_keyword" placeholder="What are you looking for?" autofocus>
+                        <span class="input-group-btn">
+                            <select class="selectpicker" id="article-count" data-width="130px">
+                                <option data-content="<span class='badge'>10</span> articles" value="10">10</option>
+                                <option data-content="<span class='badge'>20</span> articles" value="20">20</option>
+                                <option data-content="<span class='badge'>30</span> articles" value="30">30</option>
+                                <option data-content="<span class='badge'>40</span> articles" value="40">40</option>
+                                <option data-content="<span class='badge'>50</span> articles" value="50">50</option>
+                            </select>
+                        </span>
+                        <span class="input-group-btn">
+                            <button id="search-submit" ng-click="search()" class="btn btn-blue" type="submit">
+                                <i class="fa fa-search marg-right"></i>Search
+                            </button>
+                       </span>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- SEARCH RESULTS -->
+
+        <div id="search-results">
+
+            <div class="bookmarked-results-container">
+                <div class="wrapper">
+                    <span class="bookmark-info animated bounceInUp" data-result-id="{{result.id}}" ng-repeat="result in results | filter:bookmarked_results"><button ng-click="toggle_bookmark(result)" data-toggle="tooltip" data-placement="top" title="{{result.title | strip_tags}}" class="btn btn-circle bookmark bookmark-true"><i class="fa fa-star"></i></button></span>
+                </div>
+            </div>
+
+            <div class="header-container">
+                <div class="wrapper">
+                    <button id="explain-search-results-trigger" data-toggle="modal" data-target="#explain-search-results-modal" class="btn btn-blue pull-right btn-rounded"><i class="fa fa-question-circle marg-right"></i>Explain these results</button>
+                    <button type="button" class="close pull-left" ng-click="end()"><i class="fa fa-times"></i></button>
+                    <h1>{{search_heading}} <small>search results</small></h1>
+                </div>
+            </div>
+
+            <div class="bookmark-history-container" ng-hide="bookmark_history.length == 0">
+                <div class="wrapper">
+                    <a href="#" class="bookmark-history-display-trigger" ng-click="toggle_bookmark_history()">
+                        <span ng-hide="bookmark_history_showing">
+                            Show my history<i class="fa fa-angle-down marg-left"></i>
+                        </span>
+                        <span ng-show="bookmark_history_showing">
+                            Hide my history<i class="fa fa-angle-up marg-left"></i>
+                        </span>
+                    </a>
+                    <div class="bookmark-history-display">
+                        <div ng-repeat="history in bookmark_history">
+                            <div style="display: block">
+                                <h4><span class="text-blue">{{history.iteration}}.</span> iteration</h4>
+                            </div>
+                            <div class="history-articles">
+                                <div ng-repeat="article in history.articles">
+                                    <a href="{{article.url}}" target="blank" class="btn btn-circle bookmark-true bookmark" data-container="body" data-title="{{article.title | strip_tags}}" data-toggle="popover" data-placement="top" data-html="true" data-content="{{article.abstract | synopsis | strip_tags}}"><i class="fa fa-star"></i></a>
+                                    <div class="spacer"></div>
+                                </div>
+                            </div>
+                            </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="results-container">
+                <div class="wrapper">
+                    <p class="text-muted" ng-if="results.length == 0">
+                        No results found
+                    </p>
+                    <ul class="media-list search-results-list">
+                        <li class="media selected-{{result.bookmarked}}" ng-repeat="result in results">
+                            <button data-toggle="tooltip" data-placement="top" title="Select this article" ng-click="toggle_bookmark(result)" class="pull-right btn btn-circle bookmark bookmark-{{result.bookmarked}}">
+                                <i class="fa fa-star"></i>
+                            </button>
+                            <div class="media-body">
+                                <a href="{{result.url}}" target="blank"><h3 class="media-heading article-title" ng-bind-html="result.title"></h3></a>
+                                <ul class="list-inline article-attributes">
+                                    <li>
+                                    <strong><i class="fa fa-user text-muted marg-right"></i>Authors: </strong>
+                                    <span class="article-authors">{{result.author}}</span>
+                                    </li>
+                                    <li>
+                                    <strong><i class="fa fa-book text-muted marg-right"></i>Venue: </strong>
+                                    <span class="article-venue">{{result.venue}}</span>
+                                    </li>
+                                </ul>
+                                <p class="article-abstract" ng-bind-html="result.abstract_synopsis">
+                                </p>
+                                <button class="btn btn-grey btn-xs ellipsis" ng-hide="result.full_length_abstract" ng-click="show_full_abstract(result)" data-toggle="tooltip" data-placement="top" title="Show full abstract"><i class="fa fa-ellipsis-h"></i></button>
+                                <div class="progress mean-bar">
+                                    <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%;" data-mean="{{result.mean}}" data-variance="{{result.variance}}">
+                                    Exploitation
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                    </div>
+                    <button id="back-to-top" class="btn btn-grey btn-rounded"><i class="fa fa-angle-up fa-sm marg-right"></i>Back to top</button>
+                </div>
+                <div id="footer-container" ng-if="results.length != 0">
+                    <div class="wrapper">
+                        <button class="btn btn-red btn-rounded" ng-click="end()"><i class="fa fa-times marg-right"></i>End</button>
+                        <button class="btn btn-blue btn-rounded" ng-click="next()">Next<i class="fa fa-long-arrow-right marg-left"></i></button>
+                    </div>
+                </div>
+        </div>
+
+        <!-- EXPLAIN SEARCH RESULTS MODAL -->
+
+        <div class="modal fade" id="explain-search-results-modal" tabindex="-1" role="dialog" aria-labelledby="explain-search-results-modal" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i class="fa fa-times"></i></button>
+                <h4 class="modal-title">Explain these results</h4>
+              </div>
+              <div class="modal-body">
+                <div class="checkbox-label" ng-click="toggle_highlight()">
+                    <button class="blue-checkbox" id="highlight-toggle"></button> 
+                    <label>
+                        Highlight keywords
+                    </label>
+                </div>
+                <div id="highlight-info" class="explain-search-results-info">
+                    <p>
+                        The intensity of the background color indicates the weight of the keywords in your search results
+                    </p>
+                    <label style="display: block">Color scheme</label>
+                    <select class="selectpicker" id="highlight-color" data-width="130px">
+                        <option ng-repeat="color in highlight_colors" data-content="<span class='label' style='background-color: rgb({{color.rgb}})'>{{color.name}}</span>" value="{{$index}}"></option>
+                    </select>
+                    <div class="color-palet">
+                        <div class="color-palet-left">
+                            Light weight
+                        </div>
+                        <div class="color-palet-middle" style="
+                            background-image: -webkit-gradient(
+                                linear,
+                                right top,
+                                left top,
+                                color-stop(0, rgb({{selected_highlight_color.rgb}})),
+                                color-stop(1, #FFFFFF)
+                            );
+                            background-image: -o-linear-gradient(left, rgb({{selected_highlight_color.rgb}}) 0%, #FFFFFF 100%);
+                            background-image: -moz-linear-gradient(left, rgb({{selected_highlight_color.rgb}}) 0%, #FFFFFF 100%);
+                            background-image: -webkit-linear-gradient(left, rgb({{selected_highlight_color.rgb}}) 0%, #FFFFFF 100%);
+                            background-image: -ms-linear-gradient(left, rgb({{selected_highlight_color.rgb}}) 0%, #FFFFFF 100%);
+                            background-image: linear-gradient(to left, rgb({{selected_highlight_color.rgb}}) 0%, #FFFFFF 100%);
+                        ">
+                            <div style="width: 33%;" class="color-palet-divider" data-toggle="tooltip" data-placement="top" title="Light weighted keyword"></div>
+                            <div style="width: 34%;" class="color-palet-divider" data-toggle="tooltip" data-placement="top" title="Medium weighted keyword"></div>
+                            <div style="width: 33%;" class="color-palet-divider" data-toggle="tooltip" data-placement="top" title="Heavy weighted keyword"></div>
+                        </div>
+                        <div class="color-palet-right">
+                            Heavy weight
+                        </div>
+                    </div>
+                </div>
+                <a href="visualization" target="blank" class="btn btn-grey btn-rounded" style="margin-top: 20px"><i class="fa fa-eye"></i> Show visualization</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+    </body>
+    {% endverbatim %}
+</html>

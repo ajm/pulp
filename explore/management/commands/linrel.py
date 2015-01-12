@@ -25,7 +25,7 @@ class Command(BaseCommand) :
     help = 'write LinRel related files'
 
     def handle(self, *args, **options) :
-        v = CountVectorizer(min_df=1, stop_words=get_stop_words(), dtype=np.float64)
+        v = CountVectorizer(min_df=2, stop_words=get_stop_words(), dtype=np.float64)
 
         self.stdout.write("Building matrix from %d articles... " % Article.objects.count(), ending='')
         self.stdout.flush()

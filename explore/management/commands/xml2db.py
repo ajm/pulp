@@ -30,17 +30,17 @@ class ArticleParser(xml.sax.ContentHandler) :
     def startElement(self, name, attrs) :
         self.content = ""
 
-        if name == 'Article' :
+        if name == 'article' :
             self.article = Article()
 
     def characters(self, c) :
         self.content += c
 
     def endElement(self, name) :
-        if name == 'Article' : 
+        if name == 'article' : 
             if self.article :
-                if self.identity == 420 :
-                    print self.article.author
+                #if self.identity == 420 :
+                #    print self.article.author
 
                 self.article.save()
                 self.article = None
