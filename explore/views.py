@@ -355,10 +355,12 @@ def system_state(request) :
     if request.method == 'GET' :
         e = get_experiment(request.session.session_key)
         try :
-            start = request.GET['start']
-            count = request.GET['count']
+            start = int(request.GET['start'])
+            count = int(request.GET['count'])
         
         except KeyError :
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        except ValueError :
             return Response(status=status.HTTP_404_NOT_FOUND)
 
         print "start = %d, count = %d" % (start, count)
