@@ -33,7 +33,7 @@ var UTILS = (function(){
         var start_ellipsis = ( slice_start > 0 ? "..." : "" );
         var end_ellipsis = ( slice_end < words.length -1 ? "..." : "" );
 
-        words = words.slice(slice_start, slice_end); 
+        words = words.slice(slice_start, slice_end);
 
         return (  "\"" + start_ellipsis + words.join(" ") + end_ellipsis  + "\"" );
     }
@@ -70,19 +70,22 @@ var UTILS = (function(){
 
 var VISUALIZATION = (function(UTILS){
 
-    $clusters = [];
-    $current_cluster_group = 0;
-    $base_size = 100;
-    $cluster_size = 10;
-    $cluster_coloring = {};
-    $articles = [];
-    $articles_by_id = {};
-    $keywords = {};
-    $group_keywords = {};
+    var $clusters = [];
+    var $current_cluster_group = 0;
+    var $base_size = 100;
+    var $cluster_size = 10;
+    var $cluster_coloring = {};
+    var $articles = [];
+    var $articles_by_id = {};
+    var $keywords = {};
+    var $group_keywords = {};
+
+    var $COUNT = 30;
+    var $more_to_fetch = true;
 
     var construct_cluster_group = function(){
 
-        var data = fetch_data($current_cluster_group * $cluster_size, 50);
+        var data = fetch_data($current_cluster_group * $cluster_size, $COUNT);
 
         var clusters = construct_clusters(data);
         var group = [];
@@ -128,7 +131,7 @@ var VISUALIZATION = (function(UTILS){
                     $(_this).popover("hide")
                 }
             setTimeout(function () {
-                
+
             }, 100);
         });
 
@@ -186,48 +189,53 @@ var VISUALIZATION = (function(UTILS){
             if(i != 0 && i%$cluster_size == 0){
                 current_cluster++;
             }
-        }   
+        }
 
         return clusters;
     }
 
-    
+
 
     var fetch_data = function(start, count){
 
-        if($articles.length == 0){
+        if(($articles.length == 0 || $articles.length < start + count) && $more_to_fetch){
+            $articles = [];
+
             $.ajax({
-                url: "/state",
+                url: "/state?start=" + start + "&count=" + count,
                 type: "GET",
                 async: false
             }).done(function(data){
-                for(article in data.article_data){
-                    var current = data.article_data[article];
-                    var mean = current[0];
-                    var variance = current[1];
-                    var current_article = data.all_articles[article];
+                if(data.all_articles.length < count){
+                  $more_to_fetch = false;
+                }
+
+                var article_data = data.article_data;
+
+                data.all_articles.forEach(function(article){
+                    var mean = article_data[article.id + ''][0];
+                    var variance = article_data[article.id + ''][1];
+
                     var obj = {
-                        id: article,
+                        id: article.id,
                         mean: mean,
-                        title: current_article.title,
-                        abstract: current_article.abstract.replace(/<[^>]+>/gm, ''),
-                        abstract_synopsis: UTILS.synopsis(current_article.abstract.replace(/<[^>]+>/gm, ''), 250),
-                        link: current_article.url,
+                        title: article.title,
+                        abstract: article.abstract.replace(/<[^>]+>/gm, ''),
+                        abstract_synopsis: UTILS.synopsis(article.abstract.replace(/<[^>]+>/gm, ''), 250),
+                        link: article.url,
                         variance: variance,
                         visual: { width: mean * $base_size, height: mean * $base_size, opacity: -1 * variance + 1 }
                     };
+
                     $articles_by_id[article] = obj;
                     $articles.push(obj);
-                }
-                $keywords = data.keywords;
-                $articles.sort(function(a, b){
-                    return b.mean - a.mean;
                 });
+
+                $keywords = data.keywords;
             });
-            return $articles.slice(0, count);
-        }else{
-            return $articles.slice(start, Math.min($articles.length, start + count));
         }
+
+        return $articles.slice(0, Math.min($articles.length, count));
     }
 
 
@@ -241,7 +249,7 @@ var VISUALIZATION = (function(UTILS){
 
         if(articles.length > 0){
             articles.forEach(function(article){
-                var el = ".article-bubble[data-article-id='" + article + "']"; 
+                var el = ".article-bubble[data-article-id='" + article + "']";
                 $(el).css("z-index","1000");
                 $(el).css("transform", "scale(1.25");
                 $(".bubble-layer").show();
@@ -301,11 +309,23 @@ var VISUALIZATION = (function(UTILS){
         return word_points.slice(0, count);
     }
 
+    var min_max = function(arr, comparator){
+      var current_obj = null;
+
+      arr.forEach(function(obj){
+        if(!current_obj || comparator(current_obj, obj)){
+          current_obj = obj;
+        }
+      });
+
+      return current_obj;
+    }
+
     var construct_clusters = function(data){
         var cluster_arr = [];
         var clusters = separate_into_clusters(data);
         clusters.forEach(function(cluster){
-            
+
             var cluster_color = [Math.round(Math.random()*240), Math.round(Math.random()*240), Math.round(Math.random()*240)].join(",");
             while($cluster_coloring[cluster_color]){
                 cluster_color = [Math.round(Math.random()*240), Math.round(Math.random()*240), Math.round(Math.random()*240)].join(",");
@@ -316,16 +336,24 @@ var VISUALIZATION = (function(UTILS){
             cluster_min_left = Math.pow(10,12);
             cluster_max_top = 0;
             cluster_max_left = 0;
-            
+
+            var arr = $.extend([], cluster.surround);
+            arr.push(cluster.middle);
+
+            var min_mean = min_max(arr, function(a, b){ return a.mean < b.mean });
+            var max_mean = min_max(arr, function(a, b){ return a.mean > b.mean });
+
             var unit_vector = { x: 0, y: 1 };
             var iteration_angle = (2 * Math.PI)/cluster.surround.length;
             var current_angle = 0;
             var max_mean_diff = Math.abs(cluster.middle.mean - cluster.surround[cluster.surround.length-1].mean);
 
             cluster.surround = UTILS.shuffle(cluster.surround);
+
             cluster.surround.forEach(function(surround){
-                
-                var vector_width =  Math.max(cluster.middle.visual.width, Math.abs(cluster.middle.mean - surround.mean) / max_mean_diff * 300);
+                var normalized = ( surround.mean - min_mean.mean ) / ( max_mean.mean - min_mean.mean );
+
+                var vector_width =  Math.max(cluster.middle.visual.width, normalized * 250);
 
                 surround.vector = { x: unit_vector.x * vector_width, y: unit_vector.y * vector_width };
 
@@ -347,7 +375,7 @@ var VISUALIZATION = (function(UTILS){
                 }
 
             });
-            
+
             cluster.color = cluster_color;
             cluster.width = cluster_max_left + Math.abs(cluster_min_left);
             cluster.height = cluster_max_top + Math.abs(cluster_min_top);
@@ -364,9 +392,9 @@ var VISUALIZATION = (function(UTILS){
                 surround.visual.color = cluster.color;
             });
 
-            cluster_arr.push(cluster); 
+            cluster_arr.push(cluster);
         });
-        
+
         return cluster_arr;
     }
 
@@ -377,11 +405,11 @@ var VISUALIZATION = (function(UTILS){
 })(UTILS);
 
 $(window).scroll(function() {
-    if(document.documentElement.clientHeight + $(document).scrollTop() >= document.body.offsetHeight){ 
+    if(document.documentElement.clientHeight + $(document).scrollTop() >= document.body.offsetHeight){
         VISUALIZATION.render();
     }
 });
-    
+
 $(document).bind("ready", function(){
     VISUALIZATION.render();
 
