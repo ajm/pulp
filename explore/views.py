@@ -35,6 +35,7 @@ import sys
 import random
 import operator
 import numpy
+import json
 
 
 DEFAULT_NUM_ARTICLES = 10
@@ -96,7 +97,7 @@ def get_top_articles_tfidf_old(query_terms, n) :
 # n - the number of articles to return
 def get_top_articles_tfidf(query_terms, n) :
     tfidf = load_sparse_tfidf()
-    features = load_features()
+    features = load_features_tfidf()
     articles = Article.objects.all()
 
     tmp = {}
@@ -118,10 +119,22 @@ def get_top_articles_tfidf(query_terms, n) :
 
     ranking = sorted(tmp.items(), key=lambda x : x[1], reverse=True)
 
+    # XXX
+    stemmer = SnowballStemmer('english')
+    for i,r in enumerate(ranking[:n]) :
+        with open("tfidf_testing.%d" % i, 'w') as f :
+            a = articles[r[0]]
+            for word,stem in [ (word,stemmer.stem(word)) for word in a.title.split() + a.abstract.split() ] :
+                if stem not in features :
+                    continue
+                
+                print >> f, stem, word, tfidf[r[0], features[stem]]
+    # XXX
+
     return [ articles[r[0]] for r in ranking[:n] ]
 
 def get_top_articles_linrel(e, linrel_start, linrel_count) :
-    X = load_sparse_articles()
+    X = load_sparse_linrel()
     num_articles = X.shape[0]
     num_features = X.shape[1]
 
@@ -172,15 +185,18 @@ def get_top_articles_linrel(e, linrel_start, linrel_count) :
             used_keywords[stem].append(word)
 
     keyword_stats = {}
-    with open('keywords.txt') as f :
-        for line in f :
-            index,word = line.strip().split()
-            if word in used_keywords :
-                value = K[int(index),0]**2
+    features = load_features_linrel()
 
-                for key in used_keywords[word] :
-                    keyword_stats[key] = value
-    
+    for word in used_keywords :
+        if word not in features :
+            continue
+
+        index = features[word]
+        value = K[int(index),0]**2
+        
+        for key in used_keywords[word] :
+            keyword_stats[key] = value    
+
     keyword_sum = sum(keyword_stats.values())
     for i in keyword_stats :
         keyword_stats[i] /= keyword_sum

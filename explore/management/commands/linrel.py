@@ -14,7 +14,7 @@
 # along with PULP.  If not, see <http://www.gnu.org/licenses/>.
 
 from django.core.management.base import BaseCommand, CommandError
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import normalize
 from explore.models import Article
 from explore.utils import *
@@ -25,7 +25,8 @@ class Command(BaseCommand) :
     help = 'write LinRel related files'
 
     def handle(self, *args, **options) :
-        v = CountVectorizer(min_df=2, stop_words=get_stop_words(), dtype=np.float64)
+        #v = CountVectorizer(min_df=2, stop_words=get_stop_words(), dtype=np.float64)
+        v = TfidfVectorizer(min_df=2, stop_words=get_stop_words(), dtype=np.float64, norm='l2')
 
         self.stdout.write("Building matrix from %d articles... " % Article.objects.count(), ending='')
         self.stdout.flush()
@@ -45,13 +46,14 @@ class Command(BaseCommand) :
         self.stdout.write("Writing LinRel file...", ending='')
         self.stdout.flush()
 
-        save_sparse_articles(m)
+        save_sparse_linrel(m)
+        save_features_linrel(dict([ (y,x) for x,y in enumerate(v.get_feature_names()) ]))
 
-        self.stdout.write("Writing out %d keyword features..." % len(v.get_feature_names()), ending='')
-        self.stdout.flush()
-        with open('keywords.txt', 'w') as f :
-            for index,feature in enumerate(v.get_feature_names()) :
-                print >> f, index, ''.join([i for i in feature if ord(i) < 128])
-
+#        self.stdout.write("Writing out %d keyword features..." % len(v.get_feature_names()), ending='')
+#        self.stdout.flush()
+#        with open('keywords.txt', 'w') as f :
+#            for index,feature in enumerate(v.get_feature_names()) :
+#                print >> f, index, ''.join([i for i in feature if ord(i) < 128])
+#
         self.stdout.write("done!\n")
 

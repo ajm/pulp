@@ -42,15 +42,25 @@ def load_sparse(prefix) :
                                     numpy.load(prefix + '.indptr.npy')), 
                                     shape=tuple(numpy.load(prefix + '.shape.npy')))
 
-articles_prefix =   os.path.join(settings.BASE_DIR, 'articles')
+def save_features(m, fname) :
+    with open(fname, 'w') as f :
+        json.dump(m, f)
+
+def load_features(fname) :
+    with open(fname) as f :
+        return json.load(f)
+
+linrel_prefix =     os.path.join(settings.BASE_DIR, 'linrel')
 tfidf_prefix =      os.path.join(settings.BASE_DIR, 'tfidf')
-features_file =     os.path.join(settings.BASE_DIR, 'features.dat')
+linrel_features =    os.path.join(settings.BASE_DIR, 'linrel_features.json')
+tfidf_features =    os.path.join(settings.BASE_DIR, 'tfidf_features.json')
 
-def save_sparse_articles(m) :
-    save_sparse(m, articles_prefix)
 
-def load_sparse_articles() :
-    return load_sparse(articles_prefix)
+def save_sparse_linrel(m) :
+    save_sparse(m, linrel_prefix)
+
+def load_sparse_linrel() :
+    return load_sparse(linrel_prefix)
 
 def save_sparse_tfidf(m) :
     save_sparse(m, tfidf_prefix)
@@ -58,15 +68,17 @@ def save_sparse_tfidf(m) :
 def load_sparse_tfidf() :
     return load_sparse(tfidf_prefix)
 
-def save_features(m) :
-    with open(features_file, 'w') as f :
-        json.dump(m, f)
-    #    print >> f, ','.join(m)
+def save_features_tfidf(m) :
+    save_features(m, tfidf_features)
 
-def load_features() :
-    with open(features_file) as f :
-        return json.load(f)
-    #    return f.read().strip().split(',')
+def load_features_tfidf() :
+    return load_features(tfidf_features)
+
+def save_features_linrel(m) :
+    save_features(m, linrel_features)
+
+def load_features_linrel() :
+    return load_features(linrel_features)
 
 #
 # corpus related functions

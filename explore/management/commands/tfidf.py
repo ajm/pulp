@@ -57,37 +57,36 @@ class Command(BaseCommand) :
         
 
         save_sparse_tfidf(m)
-        save_features(dict([ (y,x) for x,y in enumerate(features) ]))
+        save_features_tfidf(dict([ (y,x) for x,y in enumerate(features) ]))
         
         self.stdout.write("done\n")
         return
         
 
-
-        self.stdout.write(progress_string + "0.00%%", ending='')
-        self.stdout.flush()
-
-        #tfidfs = []
-        for aindex,article in enumerate(articles) :
-            tfidfs = []
-            
-            for findex,feature in enumerate(features) :
-                value = m[aindex,findex]
-                if value :
-                    tfidf = ArticleTFIDF()
-                    tfidf.article = article
-                    tfidf.term    = feature
-                    tfidf.value   = value
-                    
-                    tfidfs.append(tfidf)
-            
-            ArticleTFIDF.objects.bulk_create(tfidfs)
-            self.stdout.write("\r" + progress_string + ("%.2f%%" % ((aindex+1) / progress_divisor)), ending='')
-            self.stdout.flush()
-
-        #self.stdout.write("\nthis might take a while...\n")
-        #self.stdout.flush()
-        #ArticleTFIDF.objects.bulk_create(tfidfs)
-
-        self.stdout.write("\r" + progress_string + "done!  \n")
+#        self.stdout.write(progress_string + "0.00%%", ending='')
+#        self.stdout.flush()
+#
+#        #tfidfs = []
+#        for aindex,article in enumerate(articles) :
+#            tfidfs = []
+#            
+#            for findex,feature in enumerate(features) :
+#                value = m[aindex,findex]
+#                if value :
+#                    tfidf = ArticleTFIDF()
+#                    tfidf.article = article
+#                    tfidf.term    = feature
+#                    tfidf.value   = value
+#                    
+#                    tfidfs.append(tfidf)
+#            
+#            ArticleTFIDF.objects.bulk_create(tfidfs)
+#            self.stdout.write("\r" + progress_string + ("%.2f%%" % ((aindex+1) / progress_divisor)), ending='')
+#            self.stdout.flush()
+#
+#        #self.stdout.write("\nthis might take a while...\n")
+#        #self.stdout.flush()
+#        #ArticleTFIDF.objects.bulk_create(tfidfs)
+#
+#        self.stdout.write("\r" + progress_string + "done!  \n")
 
