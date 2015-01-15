@@ -16,12 +16,14 @@
 import xml.sax 
 from django.core.management.base import BaseCommand, CommandError
 from explore.models import Article
+from sys import stderr
 
 class ArticleParser(xml.sax.ContentHandler) :
     def __init__(self) :
         self.identity = None
         self.content = None
         self.article = None
+        self.count = 0
 
     def cleaned(self) :
         return self.content.replace('\n', ' ').strip()
@@ -44,7 +46,11 @@ class ArticleParser(xml.sax.ContentHandler) :
 
                 self.article.save()
                 self.article = None
-        
+                self.count += 1
+
+                if (self.count % 1000) == 0 :
+                    print >> stderr, "read in %d articles" % self.count
+
         elif name == 'title'    : self.article.title = self.cleaned()
         elif name == 'author'   : self.article.author = self.cleaned()
         elif name == 'abstract' : self.article.abstract = self.cleaned()

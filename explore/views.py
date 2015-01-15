@@ -36,6 +36,9 @@ import random
 import operator
 import numpy
 import json
+import time
+
+#from profilehooks import profile, coverage, timecall
 
 
 DEFAULT_NUM_ARTICLES = 10
@@ -95,10 +98,11 @@ def get_top_articles_tfidf_old(query_terms, n) :
 
 # query terms - a list of stemmed query words
 # n - the number of articles to return
+#@timecall(immediate=True)
 def get_top_articles_tfidf(query_terms, n) :
     tfidf = load_sparse_tfidf()
     features = load_features_tfidf()
-    articles = Article.objects.all()
+    #articles = Article.objects.all()
 
     tmp = {}
 
@@ -120,27 +124,41 @@ def get_top_articles_tfidf(query_terms, n) :
     ranking = sorted(tmp.items(), key=lambda x : x[1], reverse=True)
 
     # XXX
-    stemmer = SnowballStemmer('english')
-    for i,r in enumerate(ranking[:n]) :
-        with open("tfidf_testing.%d" % i, 'w') as f :
-            a = articles[r[0]]
-            for word,stem in [ (word,stemmer.stem(word)) for word in a.title.split() + a.abstract.split() ] :
-                if stem not in features :
-                    continue
-                
-                print >> f, stem, word, tfidf[r[0], features[stem]]
+#    stemmer = SnowballStemmer('english')
+#    for i,r in enumerate(ranking[:n]) :
+#        with open("tfidf_testing.%d" % i, 'w') as f :
+#            a = articles[r[0]]
+#            for word,stem in [ (word,stemmer.stem(word)) for word in a.title.split() + a.abstract.split() ] :
+#                if stem not in features :
+#                    continue
+#                
+#                print >> f, stem, word, tfidf[r[0], features[stem]]
     # XXX
 
-    return [ articles[r[0]] for r in ranking[:n] ]
+    #return [ articles[r[0]] for r in ranking[:n] ]
+    id2article = dict([ (a.id, a) for a in Article.objects.filter(pk__in=[ r[0]+1 for r in ranking[:n] ]) ])
+    top_articles = [ id2article[i[0]+1] for i in ranking[:n] ]
+    
+    return top_articles
 
+print "loading sparse linrel"
+X = load_sparse_linrel()
+
+#@timecall(immediate=True)
+#@profile
 def get_top_articles_linrel(e, linrel_start, linrel_count) :
-    X = load_sparse_linrel()
+    #X = load_sparse_linrel()
+    global X
     num_articles = X.shape[0]
     num_features = X.shape[1]
 
+#    a = Article.objects.all()
+#    for i in range(5) :
+#        print i, a[i].id
+
     seen_articles = ArticleFeedback.objects.filter(experiment=e).exclude(selected=None)
 
-    X_t = X[ numpy.array([ a.article.id for a in seen_articles ]) ]
+    X_t = X[ numpy.array([ a.article.id - 1 for a in seen_articles ]) ]
     X_tt = X_t.transpose()
 
     mew = 0.5
@@ -162,12 +180,27 @@ def get_top_articles_linrel(e, linrel_start, linrel_count) :
     I_t = tmp + (0.05 * normL2)
     
     seen_ids = [ a.article.id for a in seen_articles ]
-    linrel_ordered = sorted(zip(I_t.transpose().tolist()[0], range(num_articles)), reverse=True)
+#    linrel_ordered = sorted(zip(I_t.transpose().tolist()[0], range(1, num_articles+1)), reverse=True)
+#    top_n = []
+#
+#    for i in linrel_ordered[linrel_start:] :
+#        print i
+#        #top_n.append(i[1])
+#        if i[1] not in seen_ids :
+#            top_n.append(i[1])
+#
+#        if len(top_n) == linrel_count :
+#            break
+
+    linrel_ordered = numpy.argsort(I_t.transpose()[0]).tolist()[0]
+    #print linrel_ordered[:10]
+    #print linrel_ordered[-10:]
     top_n = []
 
-    for i in linrel_ordered[linrel_start:] :
-        if i[1] not in seen_ids :
-            top_n.append(i[1])
+    for i in linrel_ordered[-linrel_start:][::-1] :
+        #print i+1
+        if i+1 not in seen_ids :
+            top_n.append(i+1)
 
         if len(top_n) == linrel_count :
             break
@@ -202,8 +235,8 @@ def get_top_articles_linrel(e, linrel_start, linrel_count) :
         keyword_stats[i] /= keyword_sum
 
     # XXX this is temporary, value per article
-    exploitation = dict(zip(range(num_articles), tmp.transpose().tolist()[0]))
-    exploration  = dict(zip(range(num_articles), (0.05 * normL2).transpose().tolist()[0]))
+    exploitation = dict(zip(range(1, num_articles+1), tmp.transpose().tolist()[0]))
+    exploration  = dict(zip(range(1, num_articles+1), (0.05 * normL2).transpose().tolist()[0]))
 
     article_stats = {}
 
@@ -319,6 +352,7 @@ def textual_query(request) :
 
 @api_view(['GET'])
 def selection_query(request) :
+    start_time = time.time()
     if request.method == 'GET' :
         # get experiment object
         e = get_experiment(request.session.session_key)
@@ -364,6 +398,7 @@ def selection_query(request) :
             i['mean'] = mean
             i['variance'] = var
 
+        print time.time() - start_time
         return Response({'articles' : article_data, 'keywords' : keywords})
 
 @api_view(['GET'])
