@@ -161,7 +161,7 @@ def get_top_articles_linrel(e, linrel_start, linrel_count) :
     X_t = X[ numpy.array([ a.article.id - 1 for a in seen_articles ]) ]
     X_tt = X_t.transpose()
 
-    mew = 0.5
+    mew = 1.0
     I = mew * scipy.sparse.identity(num_features, format='dia')
     
     W = spsolve((X_tt * X_t) + I, X_tt)
