@@ -57,6 +57,13 @@ class ArticleParser(xml.sax.ContentHandler) :
         else : pass
 
 
+def pick_topic(topics) :
+    if 'stat.ML' in topics :
+        return 'stat.ML'
+
+    tmp = [ i for i in topics if i.startswith('cs') ]
+    return tmp[0] if tmp else topics[0]
+
 def main() :
     global articles
 
@@ -71,7 +78,7 @@ def main() :
     print >> stderr, "read %d articles" % len(articles)
 
     with open(topic_json_fname, 'w') as f :
-        json.dump(dict([ (i, a.topics[0]) for i,a in enumerate(articles[:num_articles]) ]), f)
+        json.dump(dict([ (i, pick_topic(a.topics)) for i,a in enumerate(articles[:num_articles]) ]), f)
 
     print >> stderr, "done"
 

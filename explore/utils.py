@@ -51,9 +51,9 @@ def load_features(fname) :
         return json.load(f)
 
 linrel_prefix =     os.path.join(settings.BASE_DIR, 'linrel')
-tfidf_prefix =      os.path.join(settings.BASE_DIR, 'tfidf')
+tfidf_prefix =      linrel_prefix #os.path.join(settings.BASE_DIR, 'tfidf')
 linrel_features =    os.path.join(settings.BASE_DIR, 'linrel_features.json')
-tfidf_features =    os.path.join(settings.BASE_DIR, 'tfidf_features.json')
+tfidf_features =    linrel_features #os.path.join(settings.BASE_DIR, 'tfidf_features.json')
 
 
 def save_sparse_linrel(m) :

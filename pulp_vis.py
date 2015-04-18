@@ -5,6 +5,7 @@ import seaborn as sns
 import pandas as pd
 import scipy.sparse
 import json
+import random
 from sklearn import manifold, random_projection
 
 # http://scikit-learn.org/stable/auto_examples/manifold/plot_compare_methods.html
@@ -33,14 +34,33 @@ def load_features() :
     return load_json('linrel_features.json')
 
 def load_topics() :
-    return load_json('linrel_topics.json')
+    id2topic = load_json('linrel_topics.json')
+
+    #for k in id2topic :
+    #    v = id2topic[k]
+    #    if "." in v :
+    #        id2topic[k] = v.split(".")[0]
+
+    # there are gaps in the arxiv ids, but not in my matrix
+    tmp = {}
+    keys = [ str(i) for i in sorted([ int(i) for i in id2topic.keys() ]) ]
+    for i in range(len(keys)) :
+        if id2topic[keys[i]] not in ('cs.SE', 'cs.LG') :
+            continue
+
+        tmp[i] = id2topic[keys[i]]
+
+    return tmp
 
 def main() :
 
     method = argv[1]
+    randompicks = int(argv[2])
 
-    if method not in ('ltsa','mds','isomap','spectral','tsne') :
-        print >> stderr, "FUCK YOU TALKIN' 'ABOUT?"
+    methods = ('ltsa','mds','isomap','spectral','tsne')
+
+    if method not in methods :
+        print >> stderr, "%s not recognised (%s)" % (method, ', '.join(methods))
         exit(1)
 
     # load + constants
@@ -50,20 +70,29 @@ def main() :
     num_neighbours = 10
     id2topic = load_topics()
     
-    for k in id2topic :
-        v = id2topic[k]
-        if "." in v :
-            id2topic[k] = v.split(".")[0]
+    # random selection of articles
+    if randompicks != -1 :
+        articles = sorted(random.sample(id2topic.keys(), randompicks))
+    else :
+        articles = id2topic.keys()
+    
+    data = data[ numpy.array(articles) ]
+    num_articles, num_features = data.shape
 
-    num_components = len(set(id2topic.values()))
-    colours = [ id2topic[str(k)] for k in sorted([ int(i) for i in id2topic.keys() ]) ]
+    id2topic = dict([ (i, id2topic[i]) for i in articles ])
+
+    #num_components = len(set(id2topic.values()))
+    num_components = 2
+    colours = [ id2topic[k] for k in sorted(id2topic.keys()) ]
+
     print >> stderr, "loaded %d articles x %d features" % (num_articles, num_features)
     print >> stderr, "  ... with %d components" % num_components
 
-    print >> stderr, colours[:10]
+    #print >> stderr, colours[:10]
 
     # transform
     print >> stderr, "transforming..."
+    
     if method == 'ltsa' :
         t = manifold.LocallyLinearEmbedding(num_neighbours, 
                                             num_components,
@@ -88,20 +117,22 @@ def main() :
                           init='pca', 
                           random_state=0)
 
-    t.fit_transform(data.toarray())
+    X = t.fit_transform(data.toarray())
 
-    save_data(X, method)
-    return 0
+#    save_sparse(X, method)
+#    return 0
+
+
 
 
 #    X = random_projection.SparseRandomProjection(n_components=2, random_state=42).fit_transform(data)
     print >> stderr, "transform done, shape =", X.shape
 
     # normalise
-    #x_min, x_max = numpy.min(X, 0), numpy.max(X, 0)
-    #X = (X - x_min) / (x_max - x_min)
+    x_min, x_max = numpy.min(X, 0), numpy.max(X, 0)
+    X = (X - x_min) / (x_max - x_min)
 
-    X = X.toarray()
+    #X = X.toarray()
 
 #    print >> stderr, colours.shape
 

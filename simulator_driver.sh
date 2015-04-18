@@ -3,11 +3,15 @@
 set -e
 set -v
 
-SIMDIR=simulation_results
+SIMDIR=results
 THREADS=50
 
-
-mkdir -p $SIMDIR
-
-python pulp_ml_articles.py | xargs -P $THREADS -I {} python pulp_simulator.py {} $SIMDIR > /dev/null
+# 0.1 already run
+for RATE in 0.0 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 ; do
+    date
+    echo "RATE = $RATE"
+    DIR=${SIMDIR}_${RATE}
+    mkdir -p $DIR
+    python pulp_ml_articles.py | xargs -P $THREADS -I {} python pulp_simulator.py {} $DIR $RATE &> /dev/null
+done
 

@@ -57,7 +57,7 @@ def okapi_bm25(query, n, data, features) :
 
     return order_keys_by_value(tmp)[:n]
 
-def linrel(articles, feedback, n, data, features, mew=1.0, exploration_rate=0.05) :
+def linrel(articles, feedback, n, data, features, mew=1.0, exploration_rate=0.1) :
     assert len(articles) == len(feedback), "articles and feedback are not the same length"
 
     X = data
@@ -82,7 +82,7 @@ def linrel(articles, feedback, n, data, features, mew=1.0, exploration_rate=0.05
     K = W * Y_t
 
     mean = A * Y_t
-    variance = exploration_rate * normL2
+    variance = (exploration_rate / 2.0) * normL2
     I_t = mean + variance 
 
     linrel_ordered = numpy.argsort(I_t.transpose()[0]).tolist()[0]
@@ -103,8 +103,8 @@ def average_distance_to_target(articles, target, distances) :
     return numpy.min(distances[ numpy.array(articles) ])
 
 def main() :
-    if len(argv) != 3 :
-        print >> stderr, "Usage: %s <article index|random> <output dir>" % argv[0]
+    if len(argv) != 4 :
+        print >> stderr, "Usage: %s <article index|random> <output dir> <exploration rate>" % argv[0]
         exit(1)
 
     # parse input
@@ -120,11 +120,19 @@ def main() :
         print >> stderr, "Error, %s is not a directory/does not exist!" % results_dir
         exit(1)
 
+    try :
+        test_explore_rate = float(argv[3])
+
+    except ValueError :
+        print >> stderr, "Error, %s is not a float!" % argv[3]
+        exit(1)
+
+
     # constants
     num_shown = 10
     num_iterations = 10
     num_selections = range(num_shown + 1)
-    test_explore_rate = 0.05
+    #test_explore_rate = 0.1
     experiment_query = "machine learning"
 
     # load the data
@@ -153,6 +161,12 @@ def main() :
         experiment_target = machine_learning_articles[random.randint(0, num_ml_articles-1)]
         print "random selection of target article %d" % experiment_target
 
+    # test if this has been done before
+    out_filename = results_filename(results_dir, experiment_target)
+    if os.path.exists(out_filename) :
+        print "%s exists, exiting..." % out_filename
+        exit(0)
+
     # precalculate all the distances between all documents and the target 
     print "calculating distances to article %d" % experiment_target
     experiment_distances = euclidean_distances(data, data[experiment_target, :])
@@ -166,44 +180,104 @@ def main() :
 
     # run for X iterations
     for iteration in range(num_iterations) :
-        count = 0
-        print >> stderr, "iter %d - %d" % (iteration, count),
-
-        # do the first one outside of the loop so we can 
-        best_feedback = None
-        best_average_distance = sys.float_info.max
-        best_version = -1
+#        count = 0
+#        print >> stderr, "iter %d - %d" % (iteration, count),
+#
+#        best_feedback = None
+#        best_average_distance = sys.float_info.max
+#        best_version = -1
 
         # user can pick 0 -> 10 articles
+#        for i in num_selections :
+#            # go through all possible combinations of feedback
+#            # to select what the user does
+#            for selections in itertools.combinations(range(num_shown), i) :
+#                feedback = [ 1.0 if i in selections else 0.0 for i in range(num_shown) ]
+#                
+#                # run linrel without exploration using generated feedback
+#                articles,means,variances = linrel(experiment_articles, 
+#                                                  experiment_feedback + feedback, 
+#                                                  num_shown, 
+#                                                  data, 
+#                                                  features, 
+#                                                  exploration_rate=0.0)
+#                
+#                # test if these documents are better than the 'current best feedback' 
+#                # based on average (?) distance to target
+#                average_distance = average_distance_to_target(articles, 
+#                                                              experiment_target, 
+#                                                              experiment_distances)
+#                
+#                if average_distance < best_average_distance :
+#                    best_version = count
+#                    best_feedback = feedback
+#                    best_average_distance = average_distance
+#
+#                count += 1
+#                print >> stderr, "\riter %d - %d (best = %d, distance = %f)" % (iteration, count, best_version, best_average_distance),
+
+        remaining_articles = range(num_shown)
+        selected_articles = []
+
+        # BASE AVERAGE SHOULD BE WITH NO SELECTIONS
+        articles,means,variances = linrel(experiment_articles,
+                                          experiment_feedback + ([0.0] * num_shown),
+                                          num_shown,
+                                          data,
+                                          features,
+                                          exploration_rate=0.0)
+
+        current_average_distance = average_distance_to_target(articles,
+                                                              experiment_target,
+                                                              experiment_distances)
+
+        print >> stderr, "test %d: distance=%.3f selections=%s" % (iteration, current_average_distance, str(selected_articles))
         for i in num_selections :
-            # go through all possible combinations of feedback
-            # to select what the user does
-            for selections in itertools.combinations(range(num_shown), i) :
-                feedback = [ 1.0 if i in selections else 0.0 for i in range(num_shown) ]
-                
+
+            best_article = None
+            best_average_distance = sys.float_info.max
+
+            for a in remaining_articles :
+                tmp = selected_articles + [a]
+                feedback = [ 1.0 if i in tmp else 0.0 for i in range(num_shown) ]
+
                 # run linrel without exploration using generated feedback
-                articles,means,variances = linrel(experiment_articles, 
-                                                  experiment_feedback + feedback, 
-                                                  num_shown, 
-                                                  data, 
-                                                  features, 
+                articles,means,variances = linrel(experiment_articles,
+                                                  experiment_feedback + feedback,
+                                                  num_shown,
+                                                  data,
+                                                  features,
                                                   exploration_rate=0.0)
-                
+
+
                 # test if these documents are better than the 'current best feedback' 
                 # based on average (?) distance to target
-                average_distance = average_distance_to_target(articles, 
-                                                              experiment_target, 
+                average_distance = average_distance_to_target(articles,
+                                                              experiment_target,
                                                               experiment_distances)
-                
-                if average_distance < best_average_distance :
-                    best_version = count
-                    best_feedback = feedback
-                    best_average_distance = average_distance
 
-                count += 1
-                print >> stderr, "\riter %d - %d (best = %d, distance = %f)" % (iteration, count, best_version, best_average_distance),
+                # keep a note of the article selection that resulted in the min distance to the target
+                if average_distance < best_average_distance :
+                    best_article = a
+                    best_average_distance = average_distance
+                    print >> stderr, "test %d: distance=%.3f selections=%s" % (iteration, best_average_distance, str(selected_articles + [a]))
+
+            # test to see if the best article to add actually increases the distance
+            # to the target
+            if best_average_distance >= current_average_distance :
+                print >> stderr, "stop %d: distance=%.3f selections=%s" % (iteration, current_average_distance, str(selected_articles))
+                break
+
+            selected_articles.append(best_article)
+            remaining_articles.remove(best_article)
+            current_average_distance = best_average_distance
 
         print >> stderr, ""
+
+        best_feedback = [ 1.0 if i in selected_articles else 0.0 for i in range(num_shown) ]
+        
+        # we now know what to select, run the actual linrel code with 
+        # actual exploration rate 
         experiment_feedback += best_feedback
         articles,means,variances = linrel(experiment_articles, 
                                           experiment_feedback, 
@@ -211,7 +285,15 @@ def main() :
                                           data, 
                                           features, 
                                           exploration_rate=test_explore_rate)
+        
+        true_average_distance = average_distance_to_target(articles,
+                                                           experiment_target,
+                                                           experiment_distances)
 
+        print >> stderr, "iter %d: distance=%.3f selections=%s" % (iteration, true_average_distance, str(selected_articles))
+        print >> stderr, ""
+
+        # store everything
         experiment_articles.extend(articles)
         experiment_means.extend(means)
         experiment_variances.extend(variances)
@@ -222,6 +304,7 @@ def main() :
     #print experiment_variances
 
     guff = {
+            "out_filename" : out_filename,
             "target" : experiment_target,
             "query" : experiment_query,
             "exploration_rate" : test_explore_rate,
@@ -232,8 +315,7 @@ def main() :
            }
 
     # save to file
-    write_pulp_results(results_dir,
-                       guff,
+    write_pulp_results(guff,
                        experiment_articles, 
                        experiment_feedback, 
                        experiment_means, 
@@ -241,10 +323,13 @@ def main() :
 
     return 0
 
-def write_pulp_results(results_dir, settings, articles, feedback, means, variances) :
+def results_filename(results_dir, target) :
+    return os.path.join(results_dir, "results%d.txt" % target)
+
+def write_pulp_results(settings, articles, feedback, means, variances) :
     delimit = " "
     header = ["iteration", "article", "feedback", "mean", "variance"]
-    filename = os.path.join(results_dir, "results%d.txt" % settings["target"])
+    filename = settings["out_filename"]
 
     with open(filename, 'w') as f :
         print >> f, "# " + " ".join([ "%s=%s" % (k, '"%s"' % v if isinstance(v, str) else str(v)) for k,v in settings.items() ])

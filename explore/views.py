@@ -144,75 +144,63 @@ def get_top_articles_tfidf(query_terms, n) :
 print "loading sparse linrel"
 X = load_sparse_linrel()
 
-#@timecall(immediate=True)
-#@profile
-def get_top_articles_linrel(e, linrel_start, linrel_count) :
-    #X = load_sparse_linrel()
-    global X
+def linrel(articles, feedback, data, start, n, mew=1.0, exploration_rate=0.1) :
+    assert len(articles) == len(feedback), "articles and feedback are not the same length"
+
+    X = data
+
     num_articles = X.shape[0]
     num_features = X.shape[1]
 
-#    a = Article.objects.all()
-#    for i in range(5) :
-#        print i, a[i].id
-
-    seen_articles = ArticleFeedback.objects.filter(experiment=e).exclude(selected=None)
-
-    X_t = X[ numpy.array([ a.article.id - 1 for a in seen_articles ]) ]
+    X_t = X[ numpy.array(articles) ]
     X_tt = X_t.transpose()
 
-    mew = 1.0
     I = mew * scipy.sparse.identity(num_features, format='dia')
-    
+
     W = spsolve((X_tt * X_t) + I, X_tt)
     A = X * W
 
-    Y_t = numpy.matrix([ 1.0 if a.selected else 0.0 for a in seen_articles ]).transpose()
+    Y_t = numpy.matrix(feedback).transpose()
 
-    tmpA = numpy.array(A.todense()) 
+    tmpA = numpy.array(A.todense())
     normL2 = numpy.matrix(numpy.sqrt(numpy.sum(tmpA * tmpA, axis=1))).transpose()
 
     # W * Y_t is the keyword weights
     K = W * Y_t
 
-    tmp = (A * Y_t)
-    #I_t = tmp
-    I_t = tmp + (0.05 * normL2)
-    
-    seen_ids = [ a.article.id for a in seen_articles ]
-#    linrel_ordered = sorted(zip(I_t.transpose().tolist()[0], range(1, num_articles+1)), reverse=True)
-#    top_n = []
-#
-#    for i in linrel_ordered[linrel_start:] :
-#        print i
-#        #top_n.append(i[1])
-#        if i[1] not in seen_ids :
-#            top_n.append(i[1])
-#
-#        if len(top_n) == linrel_count :
-#            break
+    mean = A * Y_t
+    variance = (exploration_rate / 2.0) * normL2
+    I_t = mean + variance
+
 
     linrel_ordered = numpy.argsort(I_t.transpose()[0]).tolist()[0]
-    #print linrel_ordered[:10]
-    #print linrel_ordered[-10:]
     top_n = []
 
-    for i in linrel_ordered[-linrel_start:][::-1] :
-        #print i+1
-        if i+1 not in seen_ids :
-            top_n.append(i+1)
+    for i in linrel_ordered[::-1] :
+        if i not in articles :
+            top_n.append(i)
 
-        if len(top_n) == linrel_count :
+        if len(top_n) == (start + n) :
             break
 
-    id2articles = dict([ (a.id, a) for a in Article.objects.filter(pk__in=top_n) ])
-    top_articles = [ id2articles[i] for i in top_n ]
+    top_n = top_n[-n:]
+
+    return top_n, \
+           mean[ numpy.array(top_n) ].transpose().tolist()[0], \
+           variance[ numpy.array(top_n) ].transpose().tolist()[0], \
+           K
+
+def get_keyword_stats(articles, keyword_weights) :
+
+    K = keyword_weights
+    top_articles = articles
 
     # XXX this is temporary, for experimenting only
     #     and needs to be stored in the database
     stemmer = SnowballStemmer('english')
 
     used_keywords = collections.defaultdict(list)
+
     for i in top_articles :
         for word,stem in [ (word,stemmer.stem(word)) for word in i.title.split() + i.abstract.split() ] :
             used_keywords[stem].append(word)
@@ -226,24 +214,51 @@ def get_top_articles_linrel(e, linrel_start, linrel_count) :
 
         index = features[word]
         value = K[int(index),0]**2
-        
+
         for key in used_keywords[word] :
-            keyword_stats[key] = value    
+            keyword_stats[key] = value
 
     keyword_sum = sum(keyword_stats.values())
+    
     for i in keyword_stats :
         keyword_stats[i] /= keyword_sum
 
-    # XXX this is temporary, value per article
-    exploitation = dict(zip(range(1, num_articles+1), tmp.transpose().tolist()[0]))
-    exploration  = dict(zip(range(1, num_articles+1), (0.05 * normL2).transpose().tolist()[0]))
+    return keyword_stats
 
+def get_article_stats(articles, exploitation, exploration) :
     article_stats = {}
 
-    for i in top_n :
-        article_stats[i] = (exploitation[i], exploration[i])
+    for index,article_id in enumerate(articles) :
+        article_stats[article_id] = (exploitation[index], exploration[index])
 
-    return top_articles, keyword_stats, article_stats
+    return article_stats
+
+#@timecall(immediate=True)
+#@profile
+def get_top_articles_linrel(e, start, count, exploration) :
+    global X
+    
+    articles_obj = ArticleFeedback.objects.filter(experiment=e).exclude(selected=None)
+    articles_npid = [ a.article.id - 1 for a in articles_obj ] # database is 1-indexed, numpy is 0-indexed
+    feedback = [ 1.0 if a.selected else 0.0 for a in articles_obj ]
+    data = X
+
+    articles_new_npid,mean,variance,kw_weights = linrel(articles_npid, 
+                                                        feedback, 
+                                                        data, 
+                                                        start,
+                                                        count,
+                                                        exploration_rate=exploration)
+
+    articles_new_dbid = [ i + 1 for i in articles_new_npid ] # database is 1-indexed, numpy is 0-indexed
+    articles_new_obj = Article.objects.filter(pk__in=articles_new_dbid)
+
+    # everything comes out of the database sorted by id...
+    tmp = dict([ (a.id, a) for a in articles_new_obj ])
+
+    return [ tmp[id] for id in articles_new_dbid ], \
+           get_keyword_stats(articles_new_obj, kw_weights), \
+           get_article_stats(articles_new_dbid, mean, variance)
 
 def get_running_experiments(sid) :
     return Experiment.objects.filter(sessionid=sid, state=Experiment.RUNNING)
@@ -379,7 +394,7 @@ def selection_query(request) :
         # get documents with ML algorithm 
         # remember to exclude all the articles that the user has already been shown
 #        all_articles = get_unseen_articles(e)
-        rand_articles, keywords, article_stats = get_top_articles_linrel(e, linrel_start=0, linrel_count=e.number_of_documents)
+        rand_articles, keywords, article_stats = get_top_articles_linrel(e, 0, e.number_of_documents, 0.1)
 
 #        print "%d articles left to choose from" % len(all_articles)
         print "%d articles (%s)" % (len(rand_articles), ','.join([str(a.id) for a in rand_articles]))
@@ -416,7 +431,7 @@ def system_state(request) :
 
         print "start = %d, count = %d" % (start, count)
 
-        articles, keyword_stats, article_stats = get_top_articles_linrel(e, linrel_start=start, linrel_count=count)
+        articles, keyword_stats, article_stats = get_top_articles_linrel(e, start, count, 0.1)
         serializer = ArticleSerializer(articles, many=True)    
 
         return Response({'article_data' : article_stats, 'keywords' : keyword_stats, 'all_articles' : serializer.data})
