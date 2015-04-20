@@ -1,6 +1,23 @@
-SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$location", "Api", "Classifier", function($scope, $rootScope, $sce, $location, Api, Classifier){
+SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$location", "$interval", "Api", "Classifier", function($scope, $rootScope, $sce, $location, $interval, Api, Classifier){
+
+	$scope.seconds_left = 0;
+
 	if(!$rootScope.settings || !$rootScope.settings.participant_id){
 		$location.path('/settings');
+	}else if($rootScope.settings.query_time){
+		$scope.seconds_left = parseInt($scope.settings.query_time) * 60;
+
+		var query_timer = $interval(function(){
+			$scope.seconds_left--;
+
+			if($scope.seconds_left == 0){
+				$interval.cancel(query_timer);
+				Api.end({ participant_id : $rootScope.settings.participant_id }).success(function(){
+					alert('The query has ended! Thanks for participating!');
+					$location.path('/settings');
+				});
+			}
+		}, 1000)
 	}
 
 	$scope.chosen_highlight_color_index = 0;
@@ -21,7 +38,7 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
     $scope.searching = true;
     $scope.loading = true;
 
-    Api.search({ keyword: $scope.search_keyword, count: parseInt($scope.result_count) })
+    Api.search({ keyword: $scope.search_keyword, count: parseInt($scope.result_count), participant_id: $rootScope.settings.participant_id })
 		.success(function(response){
       $scope.results = response;
       $scope.search_heading = $scope.search_keyword;
@@ -55,7 +72,7 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
     var start = $scope.viewed_article.reading_started;
     var diff = (now.getTime() - start.getTime()) / 1000;
 
-    delete $scope.viewed_article.reading_started;
+    $scope.viewed_article.reading_ended = now;
     $scope.viewed_article.reading_time = diff;
     $scope.viewed_article = null;
   }
@@ -126,12 +143,14 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 
 	$scope.end = function(){
 		if(confirm('Are you sure you wan\'t to end this query?')){
+			$interval.cancel(query_timer);
 			$scope.search_keyword = '';
 			$scope.loading = true;
 
-	    Api.end().success(function(){
+	    Api.end({ participant_id : $rootScope.settings.participant_id }).success(function(){
 	      $scope.searching = false;
 	      $scope.loading = false;
+				$location.path('/settings');
 	    });
 		}
 	}
@@ -224,12 +243,8 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 		highlight();
 	});
 
-	$(window).on("keydown", function( event ) {
-		if(event.which == 39){
-			$scope.next();
-		}else if(event.which == 27){
-			$scope.end();
-		}
-	});
-
+	if($rootScope.settings.search_query){
+		$scope.search_keyword = $rootScope.settings.search_query;
+		$scope.search();
+	}
 }]);

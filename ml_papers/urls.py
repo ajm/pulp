@@ -42,4 +42,3 @@ urlpatterns = patterns('',
     url(r'^visualization', views.visualization),
     url(r'^setup', views.setup_experiment)
 )
-

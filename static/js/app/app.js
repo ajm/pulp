@@ -19,7 +19,8 @@ SearchApp.run(function($rootScope){
 	$rootScope.settings = {
 		participant_id: '',
 		task_type: 0,
-		exploration_rate: 0
+		exploration_rate: 0,
+		query_time: 15
 	};
 });
 
