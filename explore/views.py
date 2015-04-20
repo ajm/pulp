@@ -79,7 +79,7 @@ def get_top_articles_tfidf_old(query_terms, n) :
         tfidfs = ArticleTFIDF.objects.select_related('article').filter(tfidf_query)
         #articles = get_top_articles(tfidfs, num_articles)
         #print "%d articles found (%s)" % (len(articles), ','.join([str(a.id) for a in articles]))
-    
+
     except ArticleTFIDF.DoesNotExist :
         print "no articles found containing search terms"
         return []
@@ -131,14 +131,14 @@ def get_top_articles_tfidf(query_terms, n) :
 #            for word,stem in [ (word,stemmer.stem(word)) for word in a.title.split() + a.abstract.split() ] :
 #                if stem not in features :
 #                    continue
-#                
+#
 #                print >> f, stem, word, tfidf[r[0], features[stem]]
     # XXX
 
     #return [ articles[r[0]] for r in ranking[:n] ]
     id2article = dict([ (a.id, a) for a in Article.objects.filter(pk__in=[ r[0]+1 for r in ranking[:n] ]) ])
     top_articles = [ id2article[i[0]+1] for i in ranking[:n] ]
-    
+
     return top_articles
 
 print "loading sparse linrel"
@@ -219,7 +219,7 @@ def get_keyword_stats(articles, keyword_weights) :
             keyword_stats[key] = value
 
     keyword_sum = sum(keyword_stats.values())
-    
+
     for i in keyword_stats :
         keyword_stats[i] /= keyword_sum
 
@@ -237,15 +237,15 @@ def get_article_stats(articles, exploitation, exploration) :
 #@profile
 def get_top_articles_linrel(e, start, count, exploration) :
     global X
-    
+
     articles_obj = ArticleFeedback.objects.filter(experiment=e).exclude(selected=None)
     articles_npid = [ a.article.id - 1 for a in articles_obj ] # database is 1-indexed, numpy is 0-indexed
     feedback = [ 1.0 if a.selected else 0.0 for a in articles_obj ]
     data = X
 
-    articles_new_npid,mean,variance,kw_weights = linrel(articles_npid, 
-                                                        feedback, 
-                                                        data, 
+    articles_new_npid,mean,variance,kw_weights = linrel(articles_npid,
+                                                        feedback,
+                                                        data,
                                                         start,
                                                         count,
                                                         exploration_rate=exploration)
@@ -326,9 +326,9 @@ def textual_query(request) :
         # q : query string
         if 'q' not in request.GET or 'participant_id' not in request.GET :
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        
+
         query_string = request.GET['q']
-        
+
         stemmer = SnowballStemmer('english')
         query_terms = [ stemmer.stem(term) for term in query_string.lower().split() ]
 
@@ -337,7 +337,7 @@ def textual_query(request) :
         if not len(query_terms) :
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-        
+
         # participant_id : user id
         participant_id = request.GET['participant_id']
         try :
@@ -356,7 +356,7 @@ def textual_query(request) :
         e = get_experiment(user)
         e.number_of_documents = num_articles
 
-        # get documents with TFIDF-based ranking 
+        # get documents with TFIDF-based ranking
         articles = get_top_articles_tfidf(query_terms, num_articles)
 
         # add random articles if we don't have enough
@@ -364,9 +364,9 @@ def textual_query(request) :
         if fill_count :
             print "only %d articles found, adding %d random ones" % (len(articles), fill_count)
             articles += random.sample(Article.objects.all(), fill_count)
-        
+
         # create new experiment iteration
-        # save new documents to current experiment iteration 
+        # save new documents to current experiment iteration
         create_iteration(e, articles)
         e.number_of_iterations += 1
         e.save()
@@ -388,7 +388,7 @@ def selection_query(request) :
 
         except User.DoesNotExist :
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        
+
         e = get_experiment(user)
         # get previous experiment iteration
         try :
@@ -404,14 +404,14 @@ def selection_query(request) :
 
         except ValueError :
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        
+
         print selected_documents
 
         # only sent this in iteration 1, do the last iteration is 0
         if ei.iteration == 0 :
             try :
                 apply_exploration = bool(request.GET['exploratory'])
-        
+
             except :
                 return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -421,11 +421,11 @@ def selection_query(request) :
         # add selected documents to previous experiment iteration
         add_feedback(ei, selected_documents)
 
-        # get documents with ML algorithm 
+        # get documents with ML algorithm
         # remember to exclude all the articles that the user has already been shown
-        rand_articles, keywords, article_stats = get_top_articles_linrel(e, 
-                                                                         0, 
-                                                                         e.number_of_documents, 
+        rand_articles, keywords, article_stats = get_top_articles_linrel(e,
+                                                                         0,
+                                                                         e.number_of_documents,
                                                                          e.exploration_rate)
 
         print "%d articles (%s)" % (len(rand_articles), ','.join([str(a.id) for a in rand_articles]))
@@ -449,14 +449,14 @@ def selection_query(request) :
 
 @api_view(['GET'])
 def system_state(request) :
-    return Response(status=status.HTTP_404_NOT_FOUND)    
+    return Response(status=status.HTTP_404_NOT_FOUND)
 
     if request.method == 'GET' :
         e = get_experiment(request.session.session_key)
         try :
             start = int(request.GET['start'])
             count = int(request.GET['count'])
-        
+
         except KeyError :
             return Response(status=status.HTTP_404_NOT_FOUND)
         except ValueError :
@@ -465,7 +465,7 @@ def system_state(request) :
         print "start = %d, count = %d" % (start, count)
 
         articles, keyword_stats, article_stats = get_top_articles_linrel(e, start, count, 0.1)
-        serializer = ArticleSerializer(articles, many=True)    
+        serializer = ArticleSerializer(articles, many=True)
 
         return Response({'article_data' : article_stats, 'keywords' : keyword_stats, 'all_articles' : serializer.data})
 
@@ -476,7 +476,7 @@ def end_search(request) :
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         participant_id = request.GET['participant_id']
-        
+
         try :
             user = User.objects.get(username=participant_id)
 
@@ -516,16 +516,16 @@ def setup_experiment(request) :
 
     try :
         user = User.objects.get(username=participant_id)
-    
+
     except User.DoesNotExist :
         user = User()
         user.username = participant_id
         user.save()
 
-    # check if there are any running experiments 
+    # check if there are any running experiments
     # and set them to ERROR
     Experiment.objects.filter(user=user, state=Experiment.RUNNING).update(state=Experiment.ERROR)
-    
+
     # create experiment
     e = Experiment()
     e.user                  = user
@@ -535,4 +535,3 @@ def setup_experiment(request) :
     e.save()
 
     return Response(status=status.HTTP_200_OK)
-

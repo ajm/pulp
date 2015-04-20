@@ -1,0 +1,43 @@
+<div class="header-container">
+  <div class="wrapper">
+    <h1>Query settings
+  </div>
+</div>
+
+<div id="settings-container">
+  <div class="wrapper">
+    <div class="alert alert-success" ng-show="setup_saved">
+      Settings has been saved, you can now start <a href="#/">the query</a>!
+    </div>
+    <form ng-submit="setup()">
+      <div class="form-group">
+        <label>Participant ID</label>
+        <input type="text" class="form-control" ng-model="settings.participant_id" required placeholder="Participant ID" autofocus>
+      </div>
+
+      <div class="form-group">
+        <label>Task type</label>
+        <div class="radio">
+          <label>
+            <input type="radio" ng-model="settings.task_type" value="0">
+            Exploratory
+          </label>
+        </div>
+        <div class="radio">
+          <label>
+            <input type="radio" ng-model="settings.task_type" value="1">
+            Look up
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Exploration rate</label>
+        <input type="text" placeholder="Exploration rate" class="form-control" required ng-model="settings.exploration_rate">
+      </div>
+
+
+      <button type="submit" class="btn btn-blue btn-rounded">Save</button>
+    </form>
+  </div>
+</div>

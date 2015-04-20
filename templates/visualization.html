@@ -9,7 +9,7 @@
         <script src="{% static 'bootstrap/js/bootstrap.min.js' %}"></script>
         <script src="{% static 'js/mustache.js' %}"></script>
         <script src="{% static 'js/waypoints.min.js' %}"></script>
-       
+
         <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}" />
         <link rel="stylesheet" href="{% static 'bootstrap-select/bootstrap-select.min.css' %}" />
         <link rel="stylesheet" href="{% static 'font-awesome/css/font-awesome.min.css' %}" />
@@ -19,13 +19,13 @@
     </head>
     <body class="body-coordinates">
     {% verbatim %}
-        <div class="layer loading-layer">
+        <div class="visualization-layer loading-layer">
             <div class="loading-results">
                 <i class="fa fa-cog fa-spin"></i>
             </div>
         </div>
 
-        <div class="layer bubble-layer" style="z-index: 999; opacity: 0">
+        <div class="visualization-layer layer bubble-layer" style="z-index: 999; opacity: 0">
         </div>
 
         <p>
@@ -63,7 +63,7 @@
                     </p>
                     <p>
                         The articles are grouped by their exploitation value. The highest ten values are the top most articles and groups with lower exploitation value are below it. Grouping is visualized by giving each group a different color. Inside the groups the articles with the highest exploitation values are in the center and articles with lower values by the side.
-                    
+
                     </p>
                     <p>
                         Bringing your mouse over the ball, a popover appers showing articles title and description. Clicking the ball will open the article itself.
@@ -92,7 +92,7 @@
 
         <script type="text/html" id="abstract-highlight-template">
             {{#abstract_highlights}}
-                <div class="abstract-highlight animated bounceIn">  
+                <div class="abstract-highlight animated bounceIn">
                     {{{.}}}
                 </div>
             {{/abstract_highlights}}
@@ -119,7 +119,7 @@
 
                                 <h4>Common keywords</h4>
                                 {{#common_keywords}}
-                                    <span class="keyword" style="background-color: rgb({{color}})" data-group="{{counter}}">{{keyword}}</span> 
+                                    <span class="keyword" style="background-color: rgb({{color}})" data-group="{{counter}}">{{keyword}}</span>
                                 {{/common_keywords}}
                                 <!--<h4 style="margin-top: 15px">Exploration</h4>
                                 <div class="color-palet" style="font-style: normal">
@@ -152,4 +152,3 @@
         <script src="{% static 'js/visualization_app.js' %}"></script>
 	</body>
 </html>
-
