@@ -27,11 +27,11 @@ def load_features_json(fname) :
 def load_features() :
     return load_features_json('linrel_features.json')
 
-def load_topics() :
-    return load_features_json('linrel_topics.json')
+#def load_topics() :
+#    return load_features_json('linrel_topics.json')
 
-def get_machine_learning_articles() :
-    return [ int(k) for k,v in load_topics().iteritems() if 'stat.ML' in v ]
+#def get_machine_learning_articles() :
+#    return [ int(k) for k,v in load_topics().iteritems() if 'stat.ML' in v ]
 
 def order_keys_by_value(d) :
     return [ i[0] for i in sorted(d.items(), key=lambda x : x[1], reverse=True) ]
@@ -104,36 +104,44 @@ def average_distance_to_target(articles, target, distances) :
 
 def main() :
     if len(argv) != 4 :
-        print >> stderr, "Usage: %s <article index|random> <output dir> <exploration rate>" % argv[0]
+        print >> stderr, "Usage: %s <output dir> <exploration rate> <article index + keywords>" % argv[0]
         exit(1)
 
     # parse input
-    try :
-        experiment_target = int(argv[1]) if argv[1] != 'random' else None
-
-    except ValueError :
-        print >> stderr, "Error, %s is not an integer!" % argv[1]
-        exit(1)
-
-    results_dir = argv[2]
+    results_dir = argv[1]
     if not os.path.isdir(results_dir) :
         print >> stderr, "Error, %s is not a directory/does not exist!" % results_dir
         exit(1)
 
     try :
-        test_explore_rate = float(argv[3])
+        test_explore_rate = float(argv[2])
 
     except ValueError :
         print >> stderr, "Error, %s is not a float!" % argv[3]
         exit(1)
 
+    try :
+        #experiment_target = int(argv[1]) if argv[1] != 'random' else None
+        tmp = argv[3].split()
+        experiment_target = int(tmp[0])
+        experiment_query = " ".join(tmp[1:])
+
+    except ValueError :
+        print >> stderr, "Error, %s is not an integer!" % argv[1]
+        exit(1)
+
+
+    #print "dir =", results_dir
+    #print "rate =", test_explore_rate
+    #print "target =", experiment_target
+    #print "query =", experiment_query
 
     # constants
     num_shown = 10
     num_iterations = 10
     num_selections = range(num_shown + 1)
     #test_explore_rate = 0.1
-    experiment_query = "machine learning"
+    #experiment_query = "machine learning"
 
     # load the data
     data = load_data()
@@ -144,22 +152,22 @@ def main() :
     features = load_features()
     print "loaded %d features" % len(features)
 
-    machine_learning_articles = get_machine_learning_articles()
-    num_ml_articles = len(machine_learning_articles)
-    print "loaded %d stat.ML articles" % num_ml_articles
+#    machine_learning_articles = get_machine_learning_articles()
+#    num_ml_articles = len(machine_learning_articles)
+#    print "loaded %d stat.ML articles" % num_ml_articles
 
     # make sure the data is consistent
     assert len(features) == num_features, \
             "the number of features differed in the matrix vs the feature list"
 
     # make sure the input is correct
-    assert experiment_target is None or experiment_target in machine_learning_articles, \
-            "article %d is not a machine learning article!" % experiment_target
+#    assert experiment_target is None or experiment_target in machine_learning_articles, \
+#            "article %d is not a machine learning article!" % experiment_target
 
     # pick a random target document if needed
-    if not experiment_target :
-        experiment_target = machine_learning_articles[random.randint(0, num_ml_articles-1)]
-        print "random selection of target article %d" % experiment_target
+#    if not experiment_target :
+#        experiment_target = machine_learning_articles[random.randint(0, num_ml_articles-1)]
+#        print "random selection of target article %d" % experiment_target
 
     # test if this has been done before
     out_filename = results_filename(results_dir, experiment_target)

@@ -14,7 +14,6 @@
 # along with PULP.  If not, see <http://www.gnu.org/licenses/>.
 
 from django.db import models
-#from django.contrib.auth.models import User
 
 
 class Article(models.Model) :
@@ -35,6 +34,12 @@ class ArticleTFIDF(models.Model) :
     def __unicode__(self) :
         return u'%s %s %.3f' % (self.__class__.__name__, self.term, self.value)
 
+class User(models.Model) :
+    username = models.CharField(max_length=100, blank=False)
+
+    def __unicode__(self) :
+        return u'%s %s' % (self.__class__.__name__, self.username) 
+
 class Experiment(models.Model) :
     RUNNING = 'R'
     COMPLETE = 'C'
@@ -45,8 +50,20 @@ class Experiment(models.Model) :
                 (ERROR,     'Error'),
             )
 
-    #user                 = models.ForeignKey(User)         # XXX are we having users and all the auth stuff? ask dbag
-    sessionid            = models.CharField(max_length=32)
+    LOOKUP = 'L'
+    EXPLORATORY = 'E'
+    EXPERIMENT_TYPES = (
+                (LOOKUP,        'Lookup'),
+                (EXPLORATORY,   'Exploratory')
+            )
+
+    user                 = models.ForeignKey(User, blank=False)
+    date                 = models.DateTimeField(auto_now=True)
+    base_exploration_rate = models.FloatField(blank=False) # i.e. exploration_rate set in setup
+    exploration_rate     = models.FloatField(default=0.0) # i.e. exploration_rate used in linrel
+    task_type            = models.CharField(max_length=1, choices=EXPERIMENT_TYPES, blank=False)
+    #sessionid            = models.CharField(max_length=32)
+
     number_of_documents  = models.PositiveIntegerField()
     number_of_iterations = models.PositiveIntegerField(default=0)
     state                = models.CharField(max_length=1,
@@ -54,7 +71,7 @@ class Experiment(models.Model) :
                                             default=RUNNING)
 
     def __unicode__(self) :
-        return u'%s %s %s (%s)' % (self.__class__.__name__, self.id, self.user.get_username(), self.state)
+        return u'%s %s %s (%s)' % (self.__class__.__name__, self.id, self.user.username, self.state)
 
 class ExperimentIteration(models.Model) :
     experiment         = models.ForeignKey(Experiment)

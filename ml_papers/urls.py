@@ -39,6 +39,7 @@ urlpatterns = patterns('',
     url(r'^state', views.system_state),
     url(r'^end', views.end_search),
     url(r'^search', views.index),
-    url(r'^visualization', views.visualization)
+    url(r'^visualization', views.visualization),
+    url(r'^setup', views.setup_experiment)
 )
 
