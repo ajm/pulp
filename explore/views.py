@@ -530,8 +530,9 @@ def setup_experiment(request) :
     e = Experiment()
     e.user                  = user
     e.task_type             = Experiment.EXPLORATORY if task_type == 0 else Experiment.LOOKUP
-    e.num_of_documents      = DEFAULT_NUM_ARTICLES
+    e.number_of_documents   = DEFAULT_NUM_ARTICLES
     e.base_exploration_rate = exploration_rate
     e.save()
 
     return Response(status=status.HTTP_200_OK)
+
