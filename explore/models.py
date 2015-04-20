@@ -76,6 +76,7 @@ class Experiment(models.Model) :
 class ExperimentIteration(models.Model) :
     experiment         = models.ForeignKey(Experiment)
     iteration          = models.PositiveIntegerField()
+    date               = models.DateTimeField(auto_now=True)
     #shown_documents    = models.ManyToManyField(Article, related_name="shown")
     #selected_documents = models.ManyToManyField(Article, related_name="selected")
 
@@ -87,7 +88,11 @@ class ArticleFeedback(models.Model) :
     iteration   = models.ForeignKey(ExperimentIteration) # to search for articles to apply feedback to
     experiment  = models.ForeignKey(Experiment)          # to help perform linrel
     selected    = models.NullBooleanField(default=None)
+    clicked     = models.NullBooleanField(default=None)
+    reading_start   = models.FloatField(default=0)
+    reading_end     = models.FloatField(default=0)
 
     def __unicode__(self) :
         return u'%s %s %s' % (self.__class__.__name__, self.article.id, self.selected)
+
 
