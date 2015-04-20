@@ -30,6 +30,12 @@ SearchApp.filter("strip_tags", function(){
 	};
 });
 
+SearchApp.filter('html', function($sce){
+  return function(input){
+    return $sce.trustAsHtml(input);
+  }
+});
+
 SearchApp.filter("synopsis", function(){
 	return function(text){
 		return ( String(text).length > 300 ? String(text).substring(0,300) + "..." : String(text) );
