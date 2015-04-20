@@ -79,7 +79,7 @@ def get_top_articles_tfidf_old(query_terms, n) :
         tfidfs = ArticleTFIDF.objects.select_related('article').filter(tfidf_query)
         #articles = get_top_articles(tfidfs, num_articles)
         #print "%d articles found (%s)" % (len(articles), ','.join([str(a.id) for a in articles]))
-    
+
     except ArticleTFIDF.DoesNotExist :
         print "no articles found containing search terms"
         return []
@@ -131,14 +131,14 @@ def get_top_articles_tfidf(query_terms, n) :
 #            for word,stem in [ (word,stemmer.stem(word)) for word in a.title.split() + a.abstract.split() ] :
 #                if stem not in features :
 #                    continue
-#                
+#
 #                print >> f, stem, word, tfidf[r[0], features[stem]]
     # XXX
 
     #return [ articles[r[0]] for r in ranking[:n] ]
     id2article = dict([ (a.id, a) for a in Article.objects.filter(pk__in=[ r[0]+1 for r in ranking[:n] ]) ])
     top_articles = [ id2article[i[0]+1] for i in ranking[:n] ]
-    
+
     return top_articles
 
 print "loading sparse linrel"
@@ -163,13 +163,13 @@ def get_top_articles_linrel(e, linrel_start, linrel_count) :
 
     mew = 1.0
     I = mew * scipy.sparse.identity(num_features, format='dia')
-    
+
     W = spsolve((X_tt * X_t) + I, X_tt)
     A = X * W
 
     Y_t = numpy.matrix([ 1.0 if a.selected else 0.0 for a in seen_articles ]).transpose()
 
-    tmpA = numpy.array(A.todense()) 
+    tmpA = numpy.array(A.todense())
     normL2 = numpy.matrix(numpy.sqrt(numpy.sum(tmpA * tmpA, axis=1))).transpose()
 
     # W * Y_t is the keyword weights
@@ -178,7 +178,7 @@ def get_top_articles_linrel(e, linrel_start, linrel_count) :
     tmp = (A * Y_t)
     #I_t = tmp
     I_t = tmp + (0.05 * normL2)
-    
+
     seen_ids = [ a.article.id for a in seen_articles ]
 #    linrel_ordered = sorted(zip(I_t.transpose().tolist()[0], range(1, num_articles+1)), reverse=True)
 #    top_n = []
@@ -226,9 +226,9 @@ def get_top_articles_linrel(e, linrel_start, linrel_count) :
 
         index = features[word]
         value = K[int(index),0]**2
-        
+
         for key in used_keywords[word] :
-            keyword_stats[key] = value    
+            keyword_stats[key] = value
 
     keyword_sum = sum(keyword_stats.values())
     for i in keyword_stats :
@@ -311,10 +311,10 @@ def textual_query(request) :
         # q : query string
         if 'q' not in request.GET :
             return Response(status=status.HTTP_404_NOT_FOUND)
-        
+
         query_string = request.GET['q']
         #query_terms = query_string.lower().split()
-        
+
         stemmer = SnowballStemmer('english')
         query_terms = [ stemmer.stem(term) for term in query_string.lower().split() ]
 
@@ -331,7 +331,7 @@ def textual_query(request) :
         # create new experiment
         e = create_experiment(request.session.session_key, None, num_articles) #request.user, num_articles)
 
-        # get documents with TFIDF-based ranking 
+        # get documents with TFIDF-based ranking
         #articles = get_top_articles_tfidf_old(query_terms, num_articles)
         articles = get_top_articles_tfidf(query_terms, num_articles)
 
@@ -340,9 +340,9 @@ def textual_query(request) :
         if fill_count :
             print "only %d articles found, adding %d random ones" % (len(articles), fill_count)
             articles += random.sample(Article.objects.all(), fill_count)
-        
+
         # create new experiment iteration
-        # save new documents to current experiment iteration 
+        # save new documents to current experiment iteration
         create_iteration(e, articles)
         e.number_of_iterations += 1
         e.save()
@@ -370,13 +370,13 @@ def selection_query(request) :
 
         except ValueError :
             return Response(status=status.HTTP_404_NOT_FOUND)
-        
+
         print selected_documents
 
         # add selected documents to previous experiment iteration
         add_feedback(ei, selected_documents)
 
-        # get documents with ML algorithm 
+        # get documents with ML algorithm
         # remember to exclude all the articles that the user has already been shown
 #        all_articles = get_unseen_articles(e)
         rand_articles, keywords, article_stats = get_top_articles_linrel(e, linrel_start=0, linrel_count=e.number_of_documents)
@@ -408,7 +408,7 @@ def system_state(request) :
         try :
             start = int(request.GET['start'])
             count = int(request.GET['count'])
-        
+
         except KeyError :
             return Response(status=status.HTTP_404_NOT_FOUND)
         except ValueError :
@@ -417,7 +417,7 @@ def system_state(request) :
         print "start = %d, count = %d" % (start, count)
 
         articles, keyword_stats, article_stats = get_top_articles_linrel(e, linrel_start=start, linrel_count=count)
-        serializer = ArticleSerializer(articles, many=True)    
+        serializer = ArticleSerializer(articles, many=True)
 
         return Response({'article_data' : article_stats, 'keywords' : keyword_stats, 'all_articles' : serializer.data})
 
@@ -436,4 +436,3 @@ def index(request) :
 @api_view(['GET'])
 def visualization(request) :
     return render(request, 'visualization.html')
-
