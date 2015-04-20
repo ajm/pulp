@@ -260,24 +260,24 @@ def get_top_articles_linrel(e, start, count, exploration) :
            get_keyword_stats(articles_new_obj, kw_weights), \
            get_article_stats(articles_new_dbid, mean, variance)
 
-def get_running_experiments(sid) :
-    return Experiment.objects.filter(sessionid=sid, state=Experiment.RUNNING)
+def get_running_experiments(user) :
+    return Experiment.objects.filter(user=user, state=Experiment.RUNNING)
 
-def create_experiment(sid, user, num_documents) :
-    get_running_experiments(sid).update(state=Experiment.ERROR)
+#def create_experiment(sid, user, num_documents) :
+#    get_running_experiments(sid).update(state=Experiment.ERROR)
+#
+#    e = Experiment()
+#
+#    e.sessionid = sid
+#    e.number_of_documents = num_documents
+#    #e.user = user
+#
+#    e.save()
+#
+#    return e
 
-    e = Experiment()
-
-    e.sessionid = sid
-    e.number_of_documents = num_documents
-    #e.user = user
-
-    e.save()
-
-    return e
-
-def get_experiment(sid) :
-    e = get_running_experiments(sid)
+def get_experiment(user) :
+    e = get_running_experiments(user)
 
     if len(e) != 1 :
         e.update(state=Experiment.ERROR)
@@ -319,16 +319,15 @@ def textual_query(request) :
     if request.method == 'GET' :
         # experiments are started implicitly with a text query
         # and experiments are tagged with the session id
-        request.session.flush()
+#        request.session.flush()
         #print request.session.session_key
 
         # get parameters from url
         # q : query string
-        if 'q' not in request.GET :
-            return Response(status=status.HTTP_404_NOT_FOUND)
+        if 'q' not in request.GET or 'participant_id' not in request.GET :
+            return Response(status=status.HTTP_400_BAD_REQUEST)
         
         query_string = request.GET['q']
-        #query_terms = query_string.lower().split()
         
         stemmer = SnowballStemmer('english')
         query_terms = [ stemmer.stem(term) for term in query_string.lower().split() ]
@@ -336,7 +335,17 @@ def textual_query(request) :
         print "query: %s" % str(query_terms)
 
         if not len(query_terms) :
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        
+        # participant_id : user id
+        participant_id = request.GET['participant_id']
+        try :
+            user = User.objects.get(username=participant_id)
+
+        except User.DoesNotExist :
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
 
         # article-count : number of articles to return
         num_articles = int(request.GET.get('article-count', DEFAULT_NUM_ARTICLES))
@@ -344,10 +353,10 @@ def textual_query(request) :
         print "article-count: %d" % (num_articles)
 
         # create new experiment
-        e = create_experiment(request.session.session_key, None, num_articles) #request.user, num_articles)
+        e = get_experiment(user)
+        e.number_of_documents = num_articles
 
         # get documents with TFIDF-based ranking 
-        #articles = get_top_articles_tfidf_old(query_terms, num_articles)
         articles = get_top_articles_tfidf(query_terms, num_articles)
 
         # add random articles if we don't have enough
@@ -370,13 +379,23 @@ def selection_query(request) :
     start_time = time.time()
     if request.method == 'GET' :
         # get experiment object
-        e = get_experiment(request.session.session_key)
+        if 'participant_id' not in request.GET :
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        participant_id = request.GET['participant_id']
+        try :
+            user = User.objects.get(username=participant_id)
+
+        except User.DoesNotExist :
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        
+        e = get_experiment(user)
         # get previous experiment iteration
         try :
             ei = get_last_iteration(e)
 
         except ExperimentIteration.DoesNotExist :
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
         # get parameters from url
         # ?id=x&id=y&id=z
@@ -384,19 +403,31 @@ def selection_query(request) :
             selected_documents = [ int(i) for i in request.GET.getlist('id') ]
 
         except ValueError :
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
         
         print selected_documents
+
+        # only sent this in iteration 1, do the last iteration is 0
+        if ei.iteration == 0 :
+            try :
+                apply_exploration = bool(request.GET['exploratory'])
+        
+            except :
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+
+            if apply_exploration :
+                e.exploration_rate = e.base_exploration_rate
 
         # add selected documents to previous experiment iteration
         add_feedback(ei, selected_documents)
 
         # get documents with ML algorithm 
         # remember to exclude all the articles that the user has already been shown
-#        all_articles = get_unseen_articles(e)
-        rand_articles, keywords, article_stats = get_top_articles_linrel(e, 0, e.number_of_documents, 0.1)
+        rand_articles, keywords, article_stats = get_top_articles_linrel(e, 
+                                                                         0, 
+                                                                         e.number_of_documents, 
+                                                                         e.exploration_rate)
 
-#        print "%d articles left to choose from" % len(all_articles)
         print "%d articles (%s)" % (len(rand_articles), ','.join([str(a.id) for a in rand_articles]))
 
         # create new experiment iteration
@@ -418,6 +449,8 @@ def selection_query(request) :
 
 @api_view(['GET'])
 def system_state(request) :
+    return Response(status=status.HTTP_404_NOT_FOUND)    
+
     if request.method == 'GET' :
         e = get_experiment(request.session.session_key)
         try :
@@ -439,7 +472,18 @@ def system_state(request) :
 @api_view(['GET'])
 def end_search(request) :
     if request.method == 'GET' :
-        e = get_experiment(request.session.session_key)
+        if 'participant_id' not in request.GET :
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        participant_id = request.GET['participant_id']
+        
+        try :
+            user = User.objects.get(username=participant_id)
+
+        except User.DoesNotExist :
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        e = get_experiment(user)
         e.state = Experiment.COMPLETE
         e.save()
         return Response(status=status.HTTP_200_OK)
@@ -451,4 +495,44 @@ def index(request) :
 @api_view(['GET'])
 def visualization(request) :
     return render(request, 'visualization.html')
+
+@api_view(['GET'])
+def setup_experiment(request) :
+    # /setup?participant_id=1234&task_type=0&exploration_rate=1&task_order=1
+
+    try :
+        participant_id      = request.GET['participant_id']
+        task_type           = int(request.GET['task_type'])
+        exploration_rate    = float(request.GET['exploration_rate'])
+
+    except :
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    if task_type not in (0, 1) :
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    if exploration_rate < 0.0 :
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    try :
+        user = User.objects.get(username=participant_id)
+    
+    except User.DoesNotExist :
+        user = User()
+        user.username = participant_id
+        user.save()
+
+    # check if there are any running experiments 
+    # and set them to ERROR
+    Experiment.objects.filter(user=user, state=Experiment.RUNNING).update(state=Experiment.ERROR)
+    
+    # create experiment
+    e = Experiment()
+    e.user                  = user
+    e.task_type             = Experiment.EXPLORATORY_TYPE if task_type == 0 else Experiment.LOOKUP_TYPE
+    e.num_of_documents      = DEFAULT_NUM_ARTICLES
+    e.base_exploration_rate = exploration_rate
+    e.save()
+
+    return Response(status=status.HTTP_200_OK)
 
