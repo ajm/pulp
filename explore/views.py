@@ -22,7 +22,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView # class-based views
 from rest_framework.decorators import api_view # for function-based views
 
-from explore.models import Article, ArticleTFIDF, Experiment, ExperimentIteration, ArticleFeedback
+from explore.models import Article, ArticleTFIDF, Experiment, ExperimentIteration, ArticleFeedback, User
 from explore.serializers import ArticleSerializer
 from explore.utils import *
 
@@ -529,7 +529,7 @@ def setup_experiment(request) :
     # create experiment
     e = Experiment()
     e.user                  = user
-    e.task_type             = Experiment.EXPLORATORY_TYPE if task_type == 0 else Experiment.LOOKUP_TYPE
+    e.task_type             = Experiment.EXPLORATORY if task_type == 0 else Experiment.LOOKUP
     e.num_of_documents      = DEFAULT_NUM_ARTICLES
     e.base_exploration_rate = exploration_rate
     e.save()
