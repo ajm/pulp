@@ -303,12 +303,19 @@ def create_iteration(experiment, articles) :
 def get_last_iteration(e) :
     return ExperimentIteration.objects.get(experiment=e, iteration=e.number_of_iterations-1)
 
-def add_feedback(ei, articles) :
+def add_feedback(ei, articles, clickdata) :
     feedback = ArticleFeedback.objects.filter(iteration=ei)
+
+    clicks = dict([ (c['id'], (c['reading_started'], c['reading_ended'])) for c in clickdata ])
 
     for fb in feedback :
         print "saving clicked=%s for %s" % (str(fb.article.id in articles), str(fb.article.id))
         fb.selected = fb.article.id in articles
+        fb.clicked = fb.article.id in clicks
+
+        if fb.clicked :
+            fb.reading_start, fb.reading_end = clicks[fb.article.id]
+
         fb.save()
 
 def get_unseen_articles(e) :
@@ -374,22 +381,29 @@ def textual_query(request) :
         serializer = ArticleSerializer(articles, many=True)
         return Response(serializer.data)
 
-@api_view(['GET'])
+@api_view(['POST'])
 def selection_query(request) :
-    start_time = time.time()
-    if request.method == 'GET' :
-        # get experiment object
-        if 'participant_id' not in request.GET :
+
+    if request.method == 'POST' :
+        post = json.loads(request.body)
+        
+        start_time = time.time()
+        # we need participant_id to be set
+        if 'participant_id' not in post :
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-        participant_id = request.GET['participant_id']
+        # get user object
+        participant_id = post['participant_id']
+        
         try :
             user = User.objects.get(username=participant_id)
 
         except User.DoesNotExist :
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
+        # get experiment object
         e = get_experiment(user)
+
         # get previous experiment iteration
         try :
             ei = get_last_iteration(e)
@@ -400,7 +414,7 @@ def selection_query(request) :
         # get parameters from url
         # ?id=x&id=y&id=z
         try :
-            selected_documents = [ int(i) for i in request.GET.getlist('id') ]
+            selected_documents = [ int(i) for i in post['selected'] ]
 
         except ValueError :
             return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -410,7 +424,7 @@ def selection_query(request) :
         # only sent this in iteration 1, do the last iteration is 0
         if ei.iteration == 0 :
             try :
-                apply_exploration = bool(request.GET['exploratory'])
+                apply_exploration = bool(post['exploratory'])
 
             except :
                 return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -419,7 +433,7 @@ def selection_query(request) :
                 e.exploration_rate = e.base_exploration_rate
 
         # add selected documents to previous experiment iteration
-        add_feedback(ei, selected_documents)
+        add_feedback(ei, selected_documents, post['clicked'])
 
         # get documents with ML algorithm
         # remember to exclude all the articles that the user has already been shown
@@ -445,6 +459,7 @@ def selection_query(request) :
             i['variance'] = var
 
         print time.time() - start_time
+
         return Response({'articles' : article_data, 'keywords' : keywords})
 
 @api_view(['GET'])
