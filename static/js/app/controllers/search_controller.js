@@ -1,22 +1,21 @@
 SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$location", "$interval", "Api", "Classifier", function($scope, $rootScope, $sce, $location, $interval, Api, Classifier){
 
 	$scope.seconds_left = 0;
+	var query_timer = null;
 
 	if(!$rootScope.settings || !$rootScope.settings.participant_id){
 		$location.path('/settings');
 	}else if($rootScope.settings.query_time){
 		$scope.seconds_left = parseInt($scope.settings.query_time) * 60;
 
-		var query_timer = $interval(function(){
-			$scope.seconds_left--;
+		query_timer = $interval(function(){
+				$scope.seconds_left--;
 
-			if($scope.seconds_left == 0){
-				$interval.cancel(query_timer);
-				Api.end({ participant_id : $rootScope.settings.participant_id }).success(function(){
-					alert('The query has ended! Thanks for participating!');
-					$location.path('/settings');
-				});
-			}
+				console.log($scope.seconds_left);
+
+				if($scope.seconds_left == 0){
+					$scope.end();
+				}
 		}, 1000)
 	}
 
@@ -142,17 +141,14 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 	}
 
 	$scope.end = function(){
-		if(confirm('Are you sure you wan\'t to end this query?')){
-			$interval.cancel(query_timer);
-			$scope.search_keyword = '';
-			$scope.loading = true;
+		$interval.cancel(query_timer);
 
-	    Api.end({ participant_id : $rootScope.settings.participant_id }).success(function(){
-	      $scope.searching = false;
-	      $scope.loading = false;
-				$location.path('/settings');
-	    });
-		}
+		Api.end({ participant_id : $rootScope.settings.participant_id }).success(function(){
+			window.open('https://docs.google.com/forms/d/1XEZ1pJ093jQVu8msJGeegK6H3mOf6m7LZwzqeXwMCZU/viewform', '_blank');
+			alert('The query has ended! Please, fill in the form opened in the new tab');
+
+			$location.path('/settings');
+		});
 	}
 
 	$scope.toggle_highlight = function(){
