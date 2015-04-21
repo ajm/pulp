@@ -89,6 +89,7 @@ class ArticleFeedback(models.Model) :
     experiment  = models.ForeignKey(Experiment)          # to help perform linrel
     selected    = models.NullBooleanField(default=None)
     clicked     = models.NullBooleanField(default=None)
+    seen        = models.NullBooleanField(default=None)
     reading_start   = models.FloatField(default=0)
     reading_end     = models.FloatField(default=0)
 

@@ -303,7 +303,7 @@ def create_iteration(experiment, articles) :
 def get_last_iteration(e) :
     return ExperimentIteration.objects.get(experiment=e, iteration=e.number_of_iterations-1)
 
-def add_feedback(ei, articles, clickdata) :
+def add_feedback(ei, articles, clickdata, seendata) :
     feedback = ArticleFeedback.objects.filter(iteration=ei)
 
     clicks = dict([ (c['id'], (c['reading_started'], c['reading_ended'])) for c in clickdata ])
@@ -312,6 +312,7 @@ def add_feedback(ei, articles, clickdata) :
         print "saving clicked=%s for %s" % (str(fb.article.id in articles), str(fb.article.id))
         fb.selected = fb.article.id in articles
         fb.clicked = fb.article.id in clicks
+        fb.seen = fb.article.id in seendata
 
         if fb.clicked :
             fb.reading_start, fb.reading_end = clicks[fb.article.id]
@@ -429,11 +430,12 @@ def selection_query(request) :
             except :
                 return Response(status=status.HTTP_400_BAD_REQUEST)
 
-            if apply_exploration :
+#            if apply_exploration :
+            if True :
                 e.exploration_rate = e.base_exploration_rate
 
         # add selected documents to previous experiment iteration
-        add_feedback(ei, selected_documents, post['clicked'])
+        add_feedback(ei, selected_documents, post['clicked'], post['seen'])
 
         # get documents with ML algorithm
         # remember to exclude all the articles that the user has already been shown
