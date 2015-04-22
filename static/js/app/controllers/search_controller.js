@@ -90,8 +90,7 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 		};
 
 		if($scope.iteration == 1){
-			//options.exploratory = is_exploratory() ? 1 : 0;
-			options.exploratory = 1;
+			options.exploratory = is_exploratory() ? 1 : 0;
 		}
 
     UI.back_to_top();

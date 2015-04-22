@@ -3,7 +3,8 @@ SearchApp.controller('SettingsController', function($scope, $rootScope, Api){
     Api.setup({
       participant_id: $rootScope.settings.participant_id,
       exploration_rate: $rootScope.settings.exploration_rate,
-      task_type: $rootScope.settings.task_type
+      task_type: $rootScope.settings.task_type,
+      study_type: $rootScope.settings.study_type
     }).success(function(){
       $scope.setup_saved = true;
     });
