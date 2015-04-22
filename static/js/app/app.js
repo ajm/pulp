@@ -1,4 +1,4 @@
-var SearchApp = angular.module("SearchApp", ["ngRoute", "angular-bootstrap-select"]);
+var SearchApp = angular.module("SearchApp", ["ngRoute", "angular-bootstrap-select", "angular-inview"]);
 
 SearchApp.config(function($routeProvider){
 	$routeProvider
