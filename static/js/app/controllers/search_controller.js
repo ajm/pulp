@@ -11,8 +11,6 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 		query_timer = $interval(function(){
 				$scope.seconds_left--;
 
-				console.log($scope.seconds_left);
-
 				if($scope.seconds_left == 0){
 					$scope.end();
 				}
@@ -57,6 +55,11 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 
 	$scope.toggle_bookmark_history = function(){
 		$scope.bookmark_history_showing = !$scope.bookmark_history_showing;
+	}
+
+	$scope.article_in_view = function(result){
+		result.seen = true;
+		//console.log(_.where($scope.results, { seen: true }).length);
 	}
 
   $scope.touch_article = function(article){

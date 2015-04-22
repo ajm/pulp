@@ -1,4 +1,4 @@
-var SearchApp = angular.module("SearchApp", ["ngRoute", "angular-bootstrap-select"]);
+var SearchApp = angular.module("SearchApp", ["ngRoute", "angular-bootstrap-select", "angular-inview"]);
 
 SearchApp.config(function($routeProvider){
 	$routeProvider
@@ -20,7 +20,8 @@ SearchApp.run(function($rootScope){
 		participant_id: '',
 		task_type: 0,
 		exploration_rate: 0,
-		query_time: 15
+		query_time: 15,
+		study_type: 1
 	};
 });
 

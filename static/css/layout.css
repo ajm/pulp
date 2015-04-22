@@ -12,6 +12,10 @@ body.body-coordinates{
 	margin: 30px 0px;
 }
 
+a.clicked, a.clicked:hover{
+	color: rgb(118,75,142) !important;
+}
+
 .visualization-container{
 	min-width: 900px;
 }
