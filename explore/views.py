@@ -220,8 +220,11 @@ def get_keyword_stats(articles, keyword_weights) :
 
     keyword_sum = sum(keyword_stats.values())
 
-    for i in keyword_stats :
-        keyword_stats[i] /= keyword_sum
+    # if no articles are selected (feedback = [0,0,0,... ])
+    # then this can divide by zero
+    if keyword_sum :
+        for i in keyword_stats :
+            keyword_stats[i] /= keyword_sum
 
     return keyword_stats
 
