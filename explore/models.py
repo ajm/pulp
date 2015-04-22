@@ -62,6 +62,7 @@ class Experiment(models.Model) :
     base_exploration_rate = models.FloatField(blank=False) # i.e. exploration_rate set in setup
     exploration_rate     = models.FloatField(default=0.0) # i.e. exploration_rate used in linrel
     task_type            = models.CharField(max_length=1, choices=EXPERIMENT_TYPES, blank=False)
+    study_type           = models.PositiveIntegerField()
     #sessionid            = models.CharField(max_length=32)
 
     number_of_documents  = models.PositiveIntegerField()

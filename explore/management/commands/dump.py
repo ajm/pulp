@@ -32,10 +32,12 @@ class Command(BaseCommand) :
                     "participant_id",
                     "experiment_state",
                     "task_type",
+                    "study_type",
                     "base_erate",
                     "used_erate",
                     "num_docs",
-                    "num_iter" ])
+                    "num_iter",
+                    "timestamps"])
 
         print delim.join([
                     "experiment_id",
@@ -43,19 +45,25 @@ class Command(BaseCommand) :
                     "article_id",
                     "selected",
                     "clicked",
+                    "seen",
                     "start",
                     "end"
                     ])
         for e in Experiment.objects.all() :
-            print >> stderr, delim.join([ str(x) for x in [\
+            iterations = ExperimentIteration.objects.filter(experiment=e)
+            timestamps = ":".join([str(e.date)] + [ str(i.date) for i in iterations ])
+
+            print >> stderr, delim.join([ str(x) for x in [
                                 e.id,
                                 e.user.username,
                                 e.state,
                                 e.task_type,
+                                e.study_type,
                                 e.base_exploration_rate,
                                 e.exploration_rate,
                                 e.number_of_documents,
-                                e.number_of_iterations
+                                e.number_of_iterations,
+                                timestamps
                                 ]])
 
             for i in ExperimentIteration.objects.filter(experiment=e) :
@@ -63,12 +71,14 @@ class Command(BaseCommand) :
                     if a.selected == None and a.clicked == None :
                         continue
                     
-                    print delim.join([ str(x) for x in [ e.id, \
-                                       i.iteration, \
-                                       a.article.id, \
-                                       a.selected, \
-                                       a.clicked, \
-                                       a.reading_start, \
-                                       a.reading_end \
+                    print delim.join([ str(x) for x in [ 
+                                       e.id, 
+                                       i.iteration, 
+                                       a.article.id, 
+                                       a.selected, 
+                                       a.clicked, 
+                                       a.seen, 
+                                       a.reading_start, 
+                                       a.reading_end 
                                        ]])
 

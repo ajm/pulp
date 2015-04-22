@@ -391,6 +391,8 @@ def selection_query(request) :
     if request.method == 'POST' :
         post = json.loads(request.body)
         
+        print json.dumps(post, sort_keys=True, indent=4, separators=(',', ': '))
+
         start_time = time.time()
         # we need participant_id to be set
         if 'participant_id' not in post :
@@ -522,6 +524,7 @@ def setup_experiment(request) :
 
     try :
         participant_id      = request.GET['participant_id']
+        experiment_id       = request.GET['experiment_id']
         task_type           = int(request.GET['task_type'])
         exploration_rate    = float(request.GET['exploration_rate'])
 
@@ -550,6 +553,7 @@ def setup_experiment(request) :
     e = Experiment()
     e.user                  = user
     e.task_type             = Experiment.EXPLORATORY if task_type == 0 else Experiment.LOOKUP
+    e.study_type            = experiment_id
     e.number_of_documents   = DEFAULT_NUM_ARTICLES
     e.base_exploration_rate = exploration_rate
     e.save()
