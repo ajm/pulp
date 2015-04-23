@@ -1,29 +1,15 @@
 SearchApp.directive('result', function(){
   return {
     link: function(scope, elem, attrs){
-      $(elem).bind('inview', function(event, visible, tooOrBottomOrBoth){
-        if(visible == true){
-          scope.result.seen = true;
-        }
+      var header_height = 220;
+      var items_on_screen = 7;
+
+      $(window).on('resize', function(){
+        var result_height = ( $(window).height() - header_height ) / items_on_screen;
+        $(elem).css('height', result_height + 'px');
       });
-      /*$(window).on('scroll', function(){
-        var $elem = $(elem);
 
-        var $window = $(window);
-
-        var docViewTop = $window.scrollTop();
-        var docViewBottom = docViewTop + $window.height();
-
-        var elemTop = $elem.offset().top;
-        var elemBottom = elemTop + $elem.height();
-
-        if((elemBottom <= docViewBottom) && (elemTop >= docViewTop)){
-          $(elem).css('background-color', 'red');
-          scope.result.seen = true;
-        }
-      });*/
-
-      $(window).trigger('scroll');
+      $(window).trigger('resize');
     }
   }
 });

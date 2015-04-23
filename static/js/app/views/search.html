@@ -89,7 +89,8 @@
                 No results found
             </p>
             <ul class="media-list search-results-list">
-                <li class="media selected-{{result.bookmarked}}" ng-repeat="result in results" in-view="article_in_view(result)">
+                <li class="media selected-{{result.bookmarked}}" ng-repeat="result in results" in-view="article_in_view(result)" result>
+                    <div class="fade"></div>
                     <button data-toggle="tooltip" data-placement="top" title="Select this article" ng-click="toggle_bookmark(result)" class="pull-right btn btn-circle bookmark bookmark-{{result.bookmarked}}">
                         <i class="fa fa-star"></i>
                     </button>

@@ -458,8 +458,19 @@ i.fa-sm{
 
 .search-results-list li.media{
 	border-bottom: 1px solid #EEE;
-    padding-bottom: 25px;
-    padding-top: 15px;
+  padding-bottom: 25px;
+  padding-top: 15px;
+	overflow: hidden;
+	position: relative;
+}
+
+.search-results-list li.media .fade{
+	position: absolute;
+	bottom: 0px;
+	left: 0px;
+	height: 45px;
+	width: 100%;
+	background-image: linear-gradient(to bottom, transparent 0%, rgb(245,245,245) 100%);
 }
 
 #logo-container{
