@@ -220,8 +220,11 @@ def get_keyword_stats(articles, keyword_weights) :
 
     keyword_sum = sum(keyword_stats.values())
 
-    for i in keyword_stats :
-        keyword_stats[i] /= keyword_sum
+    # if no articles are selected (feedback = [0,0,0,... ])
+    # then this can divide by zero
+    if keyword_sum :
+        for i in keyword_stats :
+            keyword_stats[i] /= keyword_sum
 
     return keyword_stats
 
@@ -388,6 +391,8 @@ def selection_query(request) :
     if request.method == 'POST' :
         post = json.loads(request.body)
         
+        print json.dumps(post, sort_keys=True, indent=4, separators=(',', ': '))
+
         start_time = time.time()
         # we need participant_id to be set
         if 'participant_id' not in post :
@@ -519,6 +524,7 @@ def setup_experiment(request) :
 
     try :
         participant_id      = request.GET['participant_id']
+        experiment_id       = request.GET['experiment_id']
         task_type           = int(request.GET['task_type'])
         exploration_rate    = float(request.GET['exploration_rate'])
 
@@ -547,6 +553,7 @@ def setup_experiment(request) :
     e = Experiment()
     e.user                  = user
     e.task_type             = Experiment.EXPLORATORY if task_type == 0 else Experiment.LOOKUP
+    e.study_type            = experiment_id
     e.number_of_documents   = DEFAULT_NUM_ARTICLES
     e.base_exploration_rate = exploration_rate
     e.save()
