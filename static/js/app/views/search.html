@@ -52,12 +52,12 @@
 
             <div class="pull-right" id="header-button-wrapper">
                 <!--<button id="explain-search-results-trigger" data-toggle="modal" data-target="#explain-search-results-modal" class="btn btn-blue btn-rounded" ng-show="iteration > 1"><i class="fa fa-question-circle marg-right"></i>Explain these results</button>-->
-                <button class="btn btn-grey btn-rounded" ng-click="next()" ng-show="results.length > 0" ng-disabled="next_is_disabled()">Next<i class="fa fa-long-arrow-right marg-left"></i></button>
+                <button class="btn btn-grey btn-rounded" ng-click="next()" ng-show="results.length > 0">Next<i class="fa fa-long-arrow-right marg-left"></i></button>
             </div>
         </div>
     </div>
 
-    <div class="bookmark-history-container" ng-hide="bookmark_history.length == 0">
+    <!--<div class="bookmark-history-container" ng-hide="bookmark_history.length == 0">
         <div class="wrapper">
             <a style="cursor: pointer" class="bookmark-history-display-trigger" ng-click="toggle_bookmark_history()">
                 <span ng-hide="bookmark_history_showing">
@@ -81,7 +81,7 @@
                     </div>
             </div>
         </div>
-    </div>
+    </div>-->
 
     <div id="results-container">
         <div class="wrapper">
@@ -90,7 +90,6 @@
             </p>
             <ul class="media-list search-results-list">
                 <li class="media selected-{{result.bookmarked}}" ng-repeat="result in results" in-view="article_in_view(result)" result>
-                    <div class="fade"></div>
                     <button data-toggle="tooltip" data-placement="top" title="Select this article" ng-click="toggle_bookmark(result)" class="pull-right btn btn-circle bookmark bookmark-{{result.bookmarked}}">
                         <i class="fa fa-star"></i>
                     </button>

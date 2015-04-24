@@ -101,7 +101,7 @@ $(document).on("ready", function(){
 	});
 
 	$("body").tooltip({
-		selector: "#results-container .bookmark, .bookmarked-results-container .bookmark, .ellipsis, .bookmark-info, .word-weight"
+		selector: ".bookmarked-results-container .bookmark, .ellipsis, .bookmark-info, .word-weight"
 	});
 
 	$(".bookmark-info").live("mouseenter", function(){
