@@ -225,6 +225,17 @@ def get_keyword_stats(articles, keyword_weights) :
 
     return keyword_stats
 
+def get_stems(articles) :
+    stems = set()
+
+    stemmer = SnowballStemmer('english')
+
+    for i in articles :
+        for word,stem in [ (word,stemmer.stem(word)) for word in i.title.split() + i.abstract.split() ] :
+            stems.add(stem)
+
+    return list(stems)
+
 def get_article_stats(articles, exploitation, exploration) :
     article_stats = {}
 
@@ -258,7 +269,8 @@ def get_top_articles_linrel(e, start, count, exploration) :
 
     return [ tmp[id] for id in articles_new_dbid ], \
            get_keyword_stats(articles_new_obj, kw_weights), \
-           get_article_stats(articles_new_dbid, mean, variance)
+           get_article_stats(articles_new_dbid, mean, variance), \
+           get_stems(articles_new_obj)
 
 def get_running_experiments(sid) :
     return Experiment.objects.filter(sessionid=sid, state=Experiment.RUNNING)
@@ -394,7 +406,7 @@ def selection_query(request) :
         # get documents with ML algorithm 
         # remember to exclude all the articles that the user has already been shown
 #        all_articles = get_unseen_articles(e)
-        rand_articles, keywords, article_stats = get_top_articles_linrel(e, 0, e.number_of_documents, 0.1)
+        rand_articles, keywords, article_stats, stems = get_top_articles_linrel(e, 0, e.number_of_documents, 0.1)
 
 #        print "%d articles left to choose from" % len(all_articles)
         print "%d articles (%s)" % (len(rand_articles), ','.join([str(a.id) for a in rand_articles]))
@@ -431,10 +443,13 @@ def system_state(request) :
 
         print "start = %d, count = %d" % (start, count)
 
-        articles, keyword_stats, article_stats = get_top_articles_linrel(e, start, count, 0.1)
+        articles, keyword_stats, article_stats, stems = get_top_articles_linrel(e, start, count, 0.1)
         serializer = ArticleSerializer(articles, many=True)    
 
-        return Response({'article_data' : article_stats, 'keywords' : keyword_stats, 'all_articles' : serializer.data})
+        return Response({'article_data' : article_stats,
+                         'keywords'     : keyword_stats,
+                         'all_articles' : serializer.data,
+                         'stemming'     : stems})
 
 @api_view(['GET'])
 def end_search(request) :
