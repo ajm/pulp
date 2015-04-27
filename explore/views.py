@@ -231,7 +231,7 @@ def get_stems(articles) :
     stemmer = SnowballStemmer('english')
 
     for i in articles :
-        for word,stem in [ (word,stemmer.stem(word)) for word in i.title.split() + i.abstract.split() ] :
+        for word,stem in [ (word,stemmer.stem(word)) for word in clean_text(i.title + ' ' + i.abstract).split() ] :
             if stem not in stems[i.id] :
                 stems[i.id].append(stem)
 

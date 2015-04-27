@@ -101,6 +101,11 @@ def build_corpus() :
 
     return corpus
 
+bad_chars = set(string.digits + string.punctuation)
+
+def clean_text(s) :
+    return ''.join([ i if i not in bad_chars else ' ' for i in s.lower().strip() ])
+
 def get_stop_words() :
     try :
         return stopwords.words('english')
