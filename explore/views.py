@@ -226,15 +226,19 @@ def get_keyword_stats(articles, keyword_weights) :
     return keyword_stats
 
 def get_stems(articles) :
-    stems = set()
+    stems = collections.defaultdict(list)
 
     stemmer = SnowballStemmer('english')
 
     for i in articles :
         for word,stem in [ (word,stemmer.stem(word)) for word in i.title.split() + i.abstract.split() ] :
-            stems.add(stem)
+            if stem not in stems[i.id] :
+                stems[i.id].append(stem)
 
-    return list(stems)
+    for k in stems :
+        stems[k].sort()
+
+    return dict(stems)
 
 def get_article_stats(articles, exploitation, exploration) :
     article_stats = {}
@@ -446,10 +450,12 @@ def system_state(request) :
         articles, keyword_stats, article_stats, stems = get_top_articles_linrel(e, start, count, 0.1)
         serializer = ArticleSerializer(articles, many=True)    
 
+        for i in serializer.data :
+            i['stemming'] = stems[i['id']]
+
         return Response({'article_data' : article_stats,
                          'keywords'     : keyword_stats,
-                         'all_articles' : serializer.data,
-                         'stemming'     : stems})
+                         'all_articles' : serializer.data })
 
 @api_view(['GET'])
 def end_search(request) :
