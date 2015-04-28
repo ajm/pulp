@@ -228,10 +228,11 @@ def get_keyword_stats(articles, keyword_weights) :
 def get_stems(articles) :
     stems = collections.defaultdict(list)
 
+    stopwords = get_stop_words()
     stemmer = SnowballStemmer('english')
 
     for i in articles :
-        for word,stem in [ (word,stemmer.stem(word)) for word in clean_text(i.title + ' ' + i.abstract).split() ] :
+        for word,stem in [ (word,stemmer.stem(word)) for word in clean_text(i.title + ' ' + i.abstract).split() if word not in stopwords ] :
             if stem not in stems[i.id] :
                 stems[i.id].append(stem)
 
