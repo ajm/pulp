@@ -390,7 +390,7 @@ def selection_query(request) :
 
     if request.method == 'POST' :
         post = json.loads(request.body)
-        
+
         print json.dumps(post, sort_keys=True, indent=4, separators=(',', ': '))
 
         start_time = time.time()
@@ -400,7 +400,7 @@ def selection_query(request) :
 
         # get user object
         participant_id = post['participant_id']
-        
+
         try :
             user = User.objects.get(username=participant_id)
 
@@ -491,13 +491,20 @@ def system_state(request) :
 
         return Response({'article_data' : article_stats, 'keywords' : keyword_stats, 'all_articles' : serializer.data})
 
-@api_view(['GET'])
+@api_view(['POST'])
 def end_search(request) :
-    if request.method == 'GET' :
-        if 'participant_id' not in request.GET :
+    if request.method == 'POST' :
+        data = json.loads(request.body)
+
+        if 'participant_id' not in data :
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-        participant_id = request.GET['participant_id']
+        participant_id = data['participant_id']
+
+        # last iteration data
+        seen_articles = data['seen']
+        clicked_articles = data['clicked']
+        selected_articles = data['selected']
 
         try :
             user = User.objects.get(username=participant_id)
@@ -559,4 +566,3 @@ def setup_experiment(request) :
     e.save()
 
     return Response(status=status.HTTP_200_OK)
-

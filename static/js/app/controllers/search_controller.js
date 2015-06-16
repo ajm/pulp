@@ -17,6 +17,8 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 		}, 1000)
 	}
 
+	$rootScope.settings.participant_id = 1;
+
 	$scope.chosen_highlight_color_index = 0;
 	$scope.result_count = 20;
 	$scope.bookmark_history = [];
@@ -86,7 +88,8 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 	$scope.next = function(){
 		var options = {
 			results: $scope.results,
-			participant_id: $rootScope.settings.participant_id
+			participant_id: $rootScope.settings.participant_id,
+			exploratory: is_exploratory()
 		};
 
 		if($scope.iteration == 1){
@@ -144,14 +147,24 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 	}
 
 	$scope.end = function(){
+		var options = {
+			results: $scope.results,
+			participant_id: $rootScope.settings.participant_id,
+			exploratory: is_exploratory()
+		};
+
 		$interval.cancel(query_timer);
 
-		Api.end({ participant_id : $rootScope.settings.participant_id }).success(function(){
+		Api.end(options).success(function(){
 			window.open('https://docs.google.com/forms/d/1XEZ1pJ093jQVu8msJGeegK6H3mOf6m7LZwzqeXwMCZU/viewform', '_blank');
 			alert('The query has ended! Please, fill in the form opened in the new tab');
 
 			$location.path('/settings');
 		});
+
+		/*$scope.searching = false;
+		$scope.results = [];
+		$scope.search_keyword = '';*/
 	}
 
 	$scope.toggle_highlight = function(){
@@ -200,11 +213,12 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 		}
 	}
 
-	var init_results = function(){
+	var init_results = function(articles){
 		$scope.results.forEach(function(result){
   			result.bookmarked = false;
   			result.abstract = $sce.trustAsHtml(String(result.abstract).replace(/<[^>]+>/gm, ''));
   			result.title = $sce.trustAsHtml(String(result.title).replace(/<[^>]+>/gm, ''));
+				result.author = $sce.trustAsHtml(result.author);
 
         result.trusted_url = $sce.trustAsResourceUrl(result.url);
 
@@ -231,8 +245,6 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 			seen_count: _.where($scope.results, { seen: true }).length,
 			query_length: $scope.search_heading.split(' ').length
     };
-
-		console.log(params);
 
 		return Classifier.is_exploratory(params);
   }

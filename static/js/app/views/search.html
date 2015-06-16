@@ -78,7 +78,7 @@
                             <div class="spacer"></div>
                         </div>
                     </div>
-                    </div>
+                </div>
             </div>
         </div>
     </div>-->
@@ -99,7 +99,7 @@
                         <ul class="list-inline article-attributes">
                             <li>
                             <strong><i class="fa fa-user text-muted marg-right"></i>Authors: </strong>
-                            <span class="article-authors">{{result.author}}</span>
+                            <span class="article-authors" ng-bind-html="result.author"></span>
                             </li>
                             <li>
                             <strong><i class="fa fa-book text-muted marg-right"></i>Venue: </strong>
@@ -110,10 +110,25 @@
                         <p class="article-abstract" ng-bind-html="result.abstract_synopsis"></p>
 
                         <!--<button class="btn btn-grey btn-xs ellipsis" ng-hide="result.full_length_abstract" ng-click="show_full_abstract(result)" data-toggle="tooltip" data-placement="top" title="Show full abstract"><i class="fa fa-ellipsis-h"></i></button>-->
+
                         <!--<div class="progress mean-bar" ng-show="result.mean">
                             <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" exploitation>
                             Exploitation
                             </div>
+                        </div>
+
+                        <h3 class="heading-minor text-center">Topics</h3>
+
+                        <div class="progress">
+                          <a ng-href="#topic/1" target="_blank" class="progress-bar progress-bar-green" ng-style="{ 'width': '70%' }">
+                            Java
+                          </a>
+                          <a ng-href="#topic/1" target="_blank" class="progress-bar progress-bar-yellow" ng-style="{ 'width': '20%' }">
+                            Programming
+                          </a>
+                          <a ng-href="#topic/1" target="_blank" class="progress-bar progress-bar-blue" ng-style="{ 'width': '10%' }">
+                            Software
+                          </a>
                         </div>-->
                     </div>
                 </li>

@@ -1,4 +1,4 @@
-var SearchApp = angular.module("SearchApp", ["ngRoute", "angular-bootstrap-select", "angular-inview"]);
+var SearchApp = angular.module("SearchApp", ["ngRoute", "angular-bootstrap-select", "angular-inview", "ui.bootstrap"]);
 
 SearchApp.config(function($routeProvider){
 	$routeProvider
@@ -10,8 +10,12 @@ SearchApp.config(function($routeProvider){
 		controller: 'SettingsController',
 		templateUrl: 'static/js/app/views/settings.html'
 	})
+	/*.when('/topic/:id', {
+		controller: 'TopicController',
+		templateUrl: 'static/js/app/views/topic.html'
+	})*/
 	.otherwise({
-		redirectTo: '/'
+		redirectTo: '/settings'
 	});
 });
 

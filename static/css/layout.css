@@ -430,6 +430,10 @@ a.bookmark-true:hover{
 	text-shadow: 2px 2px rgba(0,0,0,.5);
 }
 
+.text-uppercase{
+	text-transform: uppercase;
+}
+
 .media{
 	border-bottom: 2px dotted rgb(215,215,215) !important;
 	line-height: 1.8;
@@ -464,11 +468,11 @@ i.fa-sm{
 	position: relative;
 }
 
-.search-results-list li.media .fade{
+.search-results-list li.media .fader{
 	position: absolute;
 	bottom: 0px;
 	left: 0px;
-	height: 45px;
+	height: 35px;
 	width: 100%;
 	background-image: linear-gradient(to bottom, transparent 0%, rgb(245,245,245) 100%);
 }
@@ -502,8 +506,28 @@ i.fa-sm{
 	background-color: rgb(225,225,225) !important;
 }
 
-.progress-bar{
-	background-color: #0097CF;
+.heading-minor{
+	font-size: 1.1em;
+	font-weight: bold;
+	text-transform: uppercase;
+	color: rgb(120,120,120);
+}
+
+
+a.progress-bar{
+	color: white !important;
+}
+
+.progress-bar-red{
+	background-color: #F7464A;
+}
+
+.progress-bar-yellow{
+	background-color: #FDB45C;
+}
+
+.progress-bar-green{
+	background-color: #46BFBD;
 }
 
 .abstract-highlights-container{

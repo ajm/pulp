@@ -1,11 +1,15 @@
 SearchApp.service('Api', function($http){
-  this.next = function(options){
-    var params = {
+  function parseIterationData(options){
+    return {
       selected: _.chain(options.results).where({ bookmarked: true }).map(function(bookmark){ return bookmark.id }).value(),
       participant_id: options.participant_id,
       clicked: _.chain(options.results).where({ clicked: true }).map(function(clicked){ return { id: clicked.id, reading_started: clicked.reading_started.getTime() / 1000, reading_ended: clicked.reading_ended.getTime() / 1000 } }).value(),
       seen: _.chain(options.results).where({ seen: true }).map(function(seen){ return seen.id }).value()
     }
+  }
+
+  this.next = function(options){
+    var params = parseIterationData(options);
 
     if(options.exploratory == 0 || options.exploratory == 1){
       params.exploratory = options.exploratory;
@@ -23,6 +27,8 @@ SearchApp.service('Api', function($http){
   }
 
   this.end = function(options){
-    return $http.get('/end', { params: { participant_id: options.participant_id } });
+    var params = parseIterationData(options);
+
+    return $http.post('/end', params);
   }
 });
