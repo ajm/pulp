@@ -406,7 +406,7 @@ def selection_query(request) :
 
     if request.method == 'POST' :
         post = json.loads(request.body)
-        
+
         print json.dumps(post, sort_keys=True, indent=4, separators=(',', ': '))
 
         start_time = time.time()
@@ -416,7 +416,7 @@ def selection_query(request) :
 
         # get user object
         participant_id = post['participant_id']
-        
+
         try :
             user = User.objects.get(username=participant_id)
 
@@ -594,4 +594,3 @@ def setup_experiment(request) :
     e.save()
 
     return Response(status=status.HTTP_200_OK)
-

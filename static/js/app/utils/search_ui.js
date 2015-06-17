@@ -100,10 +100,6 @@ $(document).on("ready", function(){
 		UI.back_to_top();
 	});
 
-	$("body").tooltip({
-		selector: "#results-container .bookmark, .bookmarked-results-container .bookmark, .ellipsis, .bookmark-info, .word-weight"
-	});
-
 	$(".bookmark-info").live("mouseenter", function(){
 		$(this).stop().animate({ bottom: 15 }, 300);
 	});
