@@ -390,10 +390,11 @@ def store_feedback(e, post) :
     print selected_documents
 
     if ei.iteration == 0 :
-        print "exploratory =", post['exploratory']
-        apply_exploration = post['exploratory'] == "1"
+        print "exploratory = '%s'" % post['exploratory']
+        apply_exploration = int(post['exploratory']) == 1
 
         if apply_exploration :
+            print "applying exploration"
             e.exploration_rate = e.base_exploration_rate
 
     print "exploration rate set to %.2f" % e.exploration_rate
@@ -556,6 +557,8 @@ def visualization(request) :
 @api_view(['GET'])
 def setup_experiment(request) :
     # /setup?participant_id=1234&task_type=0&exploration_rate=1&task_order=1
+
+    print json.dumps(request.GET, sort_keys=True, indent=4, separators=(',', ': '))
 
     try :
         participant_id      = request.GET['participant_id']
