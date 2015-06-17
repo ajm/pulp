@@ -49,9 +49,13 @@ class Command(BaseCommand) :
                     "start",
                     "end"
                     ])
+
+        def unix_time(dt) :
+            return (dt - datetime.datetime.utcfromtimestamp(0)).total_seconds()
+
         for e in Experiment.objects.all() :
             iterations = ExperimentIteration.objects.filter(experiment=e)
-            timestamps = ":".join([str(e.date)] + [ str(i.date) for i in iterations ])
+            timestamps = ":".join([unix_time(e.date)] + [ unix_time(i.date) for i in iterations ])
 
             print >> stderr, delim.join([ str(x) for x in [
                                 e.id,

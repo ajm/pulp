@@ -62,7 +62,6 @@ class GetArticle(generics.RetrieveAPIView) :
 #        serializer = ArticleSerializer(article)
 #        return Response(serializer.data)
 
-
 @api_view(['GET'])
 def logout_view(request):
     #logout(request)
@@ -70,8 +69,7 @@ def logout_view(request):
 
 def get_top_articles_tfidf_old(query_terms, n) :
     """
-    return top n articles using tfidf terms,
-    ranking articles using okapi_bm25
+    return top n articles using tfidf terms
     """
 
     try :
@@ -117,9 +115,9 @@ def get_top_articles_tfidf(query_terms, n) :
         for aindex in numpy.nonzero(tfidf[:, findex])[0] :
             akey = aindex.item()
             if akey not in tmp :
-                tmp[akey] = 1.0
+                tmp[akey] = 0.0
 
-            tmp[akey] *= tfidf[aindex,findex]
+            tmp[akey] += tfidf[aindex,findex]
 
     ranking = sorted(tmp.items(), key=lambda x : x[1], reverse=True)
 
@@ -366,6 +364,7 @@ def textual_query(request) :
         # create new experiment
         e = get_experiment(user)
         e.number_of_documents = num_articles
+        #e.query = query_string
 
         # get documents with TFIDF-based ranking
         articles = get_top_articles_tfidf(query_terms, num_articles)
@@ -384,6 +383,23 @@ def textual_query(request) :
 
         serializer = ArticleSerializer(articles, many=True)
         return Response(serializer.data)
+
+def store_feedback(e, post) :
+    ei = get_last_iteration(e)
+    selected_documents = [ int(i) for i in post['selected'] ]
+    print selected_documents
+
+    if ei.iteration == 0 :
+        print "exploratory =", post['exploratory']
+        apply_exploration = post['exploratory'] == "1"
+
+        if apply_exploration :
+            e.exploration_rate = e.base_exploration_rate
+
+    print "exploration rate set to %.2f" % e.exploration_rate
+
+    # add selected documents to previous experiment iteration
+    add_feedback(ei, selected_documents, post['clicked'], post['seen'])
 
 @api_view(['POST'])
 def selection_query(request) :
@@ -410,37 +426,45 @@ def selection_query(request) :
         # get experiment object
         e = get_experiment(user)
 
-        # get previous experiment iteration
         try :
-            ei = get_last_iteration(e)
-
-        except ExperimentIteration.DoesNotExist :
+            store_feedback(e, post)
+        
+        except Exception :
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-        # get parameters from url
-        # ?id=x&id=y&id=z
-        try :
-            selected_documents = [ int(i) for i in post['selected'] ]
-
-        except ValueError :
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-
-        print selected_documents
-
-        # only sent this in iteration 1, do the last iteration is 0
-        if ei.iteration == 0 :
-            try :
-                apply_exploration = bool(post['exploratory'])
-
-            except :
-                return Response(status=status.HTTP_400_BAD_REQUEST)
-
+#        # get previous experiment iteration
+#        try :
+#            ei = get_last_iteration(e)
+#
+#        except ExperimentIteration.DoesNotExist :
+#            return Response(status=status.HTTP_400_BAD_REQUEST)
+#
+#        # get parameters from url
+#        # ?id=x&id=y&id=z
+#        try :
+#            selected_documents = [ int(i) for i in post['selected'] ]
+#
+#        except ValueError :
+#            return Response(status=status.HTTP_400_BAD_REQUEST)
+#
+#        print selected_documents
+#
+#        # only sent in iteration 1
+#        if ei.iteration == 0 :
+#            try :
+#                print "exploratory =", post['exploratory']
+#                apply_exploration = post['exploratory'] == "1"
+#
+#            except :
+#                return Response(status=status.HTTP_400_BAD_REQUEST)
+#
 #            if apply_exploration :
-            if True :
-                e.exploration_rate = e.base_exploration_rate
-
-        # add selected documents to previous experiment iteration
-        add_feedback(ei, selected_documents, post['clicked'], post['seen'])
+#                e.exploration_rate = e.base_exploration_rate
+#
+#        print "exploration rate set to %.2f" % e.exploration_rate
+#
+#        # add selected documents to previous experiment iteration
+#        add_feedback(ei, selected_documents, post['clicked'], post['seen'])
 
         # get documents with ML algorithm
         # remember to exclude all the articles that the user has already been shown
@@ -491,13 +515,15 @@ def system_state(request) :
 
         return Response({'article_data' : article_stats, 'keywords' : keyword_stats, 'all_articles' : serializer.data})
 
-@api_view(['GET'])
+@api_view(['POST'])
 def end_search(request) :
-    if request.method == 'GET' :
-        if 'participant_id' not in request.GET :
+    if request.method == 'POST' :
+        post = json.loads(request.body)
+
+        if 'participant_id' not in post :
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-        participant_id = request.GET['participant_id']
+        participant_id = post['participant_id']
 
         try :
             user = User.objects.get(username=participant_id)
@@ -506,8 +532,17 @@ def end_search(request) :
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         e = get_experiment(user)
+        
+        try :
+            store_feedback(e, post)
+
+        except :
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
         e.state = Experiment.COMPLETE
         e.save()
+
         return Response(status=status.HTTP_200_OK)
 
 @api_view(['GET'])
