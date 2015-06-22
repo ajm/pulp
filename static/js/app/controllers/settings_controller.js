@@ -1,4 +1,5 @@
 SearchApp.controller('SettingsController', function($scope, $rootScope, Api){
+
   $scope.setup = function(){
     Api.setup({
       participant_id: $rootScope.settings.participant_id,

@@ -96,6 +96,12 @@
                     <div class="media-body">
                         <a style="cursor: pointer" target="blank" ng-click="touch_article(result)" ng-class="{ 'clicked': result.clicked }"><h3 class="media-heading article-title" ng-bind-html="result.title"></h3></a>
 
+                        <button class="btn btn-grey plain-abstract-toggle" ng-click="toggle_plain_abstract(result)">
+                          <i class="fa fa-eye"></i>
+                          <span ng-hide="result.show_plain_abstract">Show plain version</span>
+                          <span ng-show="result.show_plain_abstract">Show LaTeX version</span>
+                        </button>
+
                         <ul class="list-inline article-attributes">
                             <li>
                             <strong><i class="fa fa-user text-muted marg-right"></i>Authors: </strong>
@@ -107,7 +113,9 @@
                             </li>
                         </ul>
 
-                        <p class="article-abstract" ng-bind-html="result.abstract_synopsis"></p>
+                        <div class="article-abstract" ng-hide="result.show_plain_abstract" mathjax-bind="result.abstract"></div>
+
+                        <div ng-bind-html="result.plain_abstract" ng-show="result.show_plain_abstract"></div>
 
                         <!--<button class="btn btn-grey btn-xs ellipsis" ng-hide="result.full_length_abstract" ng-click="show_full_abstract(result)" data-toggle="tooltip" data-placement="top" title="Show full abstract"><i class="fa fa-ellipsis-h"></i></button>-->
 

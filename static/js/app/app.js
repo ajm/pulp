@@ -1,3 +1,12 @@
+MathJax.Hub.Config({
+		tex2jax: {
+		    inlineMath: [['$','$'], ['\\(','\\)']],
+		    processEscapes: true
+		    }
+});
+
+MathJax.Hub.Configured();
+
 var SearchApp = angular.module("SearchApp", ["ngRoute", "angular-bootstrap-select", "angular-inview", "ui.bootstrap"]);
 
 SearchApp.config(function($routeProvider){
