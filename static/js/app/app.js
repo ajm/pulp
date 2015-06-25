@@ -19,12 +19,12 @@ SearchApp.config(function($routeProvider){
 		controller: 'SettingsController',
 		templateUrl: 'static/js/app/views/settings.html'
 	})
-	/*.when('/topic/:id', {
+	.when('/topic/:id', {
 		controller: 'TopicController',
 		templateUrl: 'static/js/app/views/topic.html'
-	})*/
+	})
 	.otherwise({
-		redirectTo: '/settings'
+		redirectTo: '/'
 	});
 });
 

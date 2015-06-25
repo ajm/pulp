@@ -31,4 +31,6 @@ SearchApp.service('Api', function($http){
 
     return $http.post('/end', params);
   }
+
+  
 });

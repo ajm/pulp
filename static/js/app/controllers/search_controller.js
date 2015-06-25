@@ -1,23 +1,8 @@
-SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$location", "$interval", "Api", "Classifier", function($scope, $rootScope, $sce, $location, $interval, Api, Classifier){
+SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$location", "$interval", "$anchorScroll", "Api", "Classifier", function($scope, $rootScope, $sce, $location, $interval, $anchorScroll, Api, Classifier){
 
-	$scope.seconds_left = 0;
-	var query_timer = null;
-
-	if(!$rootScope.settings || !$rootScope.settings.participant_id){
-		$location.path('/settings');
-	}else if($rootScope.settings.query_time){
-		$scope.seconds_left = parseInt($scope.settings.query_time) * 60;
-
-		query_timer = $interval(function(){
-				$scope.seconds_left--;
-
-				if($scope.seconds_left == 0){
-					$scope.end();
-				}
-		}, 1000)
-	}
-
-	$rootScope.settings.participant_id = 1;
+	$rootScope.settings = {
+		participant_id: 1
+	};
 
 	$scope.chosen_highlight_color_index = 0;
 	$scope.result_count = 20;
@@ -82,6 +67,13 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 
 	$scope.toggle_bookmark = function(result){
 		result.bookmarked = !result.bookmarked;
+	}
+
+	$scope.diagram_topic_on_click = function(){
+		window.open('#/topic/1');
+	}
+
+	$scope.diagram_article_on_click = function(article){
 	}
 
 	$scope.next = function(){
@@ -150,13 +142,8 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 			participant_id: $rootScope.settings.participant_id
 		};
 
-		$interval.cancel(query_timer);
-
 		Api.end(options).success(function(){
-			window.open('https://docs.google.com/forms/d/1XEZ1pJ093jQVu8msJGeegK6H3mOf6m7LZwzqeXwMCZU/viewform', '_blank');
-			alert('The query has ended! Please, fill in the form opened in the new tab');
-
-			$location.path('/settings');
+			$scope.searching = false;
 		});
 
 		/*$scope.searching = false;
@@ -215,20 +202,58 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 	}
 
 	var init_results = function(articles){
+		$scope.topics = [
+			{
+				id: 1,
+				title: 'Java',
+				values: []
+			},
+			{
+				id: 2,
+				title: 'Programming',
+				values: []
+			}
+		];
+
 		$scope.results.forEach(function(result){
   			result.bookmarked = false;
-  			//result.abstract = $sce.trustAsHtml(result.abstract);
 				result.plain_abstract = $sce.trustAsHtml(result.abstract);
   			result.title = $sce.trustAsHtml(String(result.title).replace(/<[^>]+>/gm, ''));
 				result.author = $sce.trustAsHtml(result.author);
-
         result.trusted_url = $sce.trustAsResourceUrl(result.url);
 
-        var synopsis = ( String(result.abstract).length > 600 ? String(result.abstract).substring(0, 600) + "..." : String(result.abstract) );
+				$scope.topics[0].values.push({
+					title: String(result.title).replace(/<[^>]+>/gm, ''),
+					id: result.id,
+					weight: _.random(0.2, 1)
+				});
 
-        result.abstract_synopsis = $sce.trustAsHtml(synopsis);
-  			result.full_length_abstract = ( String(result.abstract).length == String(result.abstract_synopsis).length );
+				$scope.topics[1].values.push({
+					title: String(result.title).replace(/<[^>]+>/gm, ''),
+					id: result.id,
+					weight: _.random(0.2, 0.5)
+				});
+
+        //var synopsis = ( String(result.abstract).length > 600 ? String(result.abstract).substring(0, 600) + "..." : String(result.abstract) );
+        //result.abstract_synopsis = $sce.trustAsHtml(synopsis);
+  			//result.full_length_abstract = ( String(result.abstract).length == String(result.abstract_synopsis).length );
   		});
+
+			_.times(80, function(){
+				$scope.topics[0].values.push({
+					title: 'Lorem ipsum dolor sit amet',
+					id: 0,
+					weight: _.random(0.2, 1)
+				});
+			});
+
+			_.times(80, function(){
+				$scope.topics[1].values.push({
+					title: 'Lorem ipsum dolor sit amet',
+					id: 0,
+					weight: _.random(0.2, 0.5)
+				});
+			});
 	}
 
 	var reset_variables = function(){
