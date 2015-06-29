@@ -17,8 +17,6 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 		}, 1000)
 	}
 
-	$rootScope.settings.participant_id = 1;
-
 	$scope.chosen_highlight_color_index = 0;
 	$scope.result_count = 20;
 	$scope.bookmark_history = [];
