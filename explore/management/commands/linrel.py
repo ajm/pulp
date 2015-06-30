@@ -38,14 +38,14 @@ class Command(BaseCommand) :
         
         self.stdout.write("done!\n")
 
-        self.stdout.write("Normalising... ", ending='')
-        self.stdout.flush()
-
-        if not scipy.sparse.isspmatrix_csr(m) :
-            m = m.tocsr()
-
-        normalize(m, norm='l2', copy=False)
-        self.stdout.write("done!\n")
+#        self.stdout.write("Normalising... ", ending='')
+#        self.stdout.flush()
+#
+#        if not scipy.sparse.isspmatrix_csr(m) :
+#            m = m.tocsr()
+#
+#        normalize(m, norm='l2', copy=False)
+#        self.stdout.write("done!\n")
 
         self.stdout.write("Writing LinRel file...", ending='')
         self.stdout.flush()
