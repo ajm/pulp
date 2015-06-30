@@ -117,7 +117,7 @@ def build_corpus() :
 
     for a in Article.objects.all() :
         s = a.title + ' ' + a.abstract
-        s = remove_latex(s)
+        #s = remove_latex(s)
         s = s.lower().strip()
         s = ''.join([ i if i not in bad_chars else ' ' for i in s ])
 
