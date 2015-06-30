@@ -17,8 +17,6 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 		}, 1000)
 	}
 
-	$rootScope.settings.participant_id = 1;
-
 	$scope.chosen_highlight_color_index = 0;
 	$scope.result_count = 20;
 	$scope.bookmark_history = [];
@@ -61,7 +59,6 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 
 	$scope.article_in_view = function(result){
 		result.seen = true;
-		//console.log(_.where($scope.results, { seen: true }).length);
 	}
 
   $scope.touch_article = function(article){
@@ -88,8 +85,7 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 	$scope.next = function(){
 		var options = {
 			results: $scope.results,
-			participant_id: $rootScope.settings.participant_id,
-			exploratory: is_exploratory()
+			participant_id: $rootScope.settings.participant_id
 		};
 
 		if($scope.iteration == 1){
@@ -149,8 +145,7 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 	$scope.end = function(){
 		var options = {
 			results: $scope.results,
-			participant_id: $rootScope.settings.participant_id,
-			exploratory: is_exploratory()
+			participant_id: $rootScope.settings.participant_id
 		};
 
 		$interval.cancel(query_timer);
@@ -186,6 +181,10 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 		return result.bookmarked == true;
 	}
 
+	$scope.toggle_plain_abstract = function(result){
+		result.show_plain_abstract = !result.show_plain_abstract;
+	}
+
 	// PRIVATE FUNCTIONS
 	var un_highlight = function(){
 		$scope.results.forEach(function(result){
@@ -216,7 +215,8 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 	var init_results = function(articles){
 		$scope.results.forEach(function(result){
   			result.bookmarked = false;
-  			result.abstract = $sce.trustAsHtml(String(result.abstract).replace(/<[^>]+>/gm, ''));
+  			//result.abstract = $sce.trustAsHtml(result.abstract);
+				result.plain_abstract = $sce.trustAsHtml(result.abstract);
   			result.title = $sce.trustAsHtml(String(result.title).replace(/<[^>]+>/gm, ''));
 				result.author = $sce.trustAsHtml(result.author);
 

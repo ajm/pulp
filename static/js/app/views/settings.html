@@ -1,6 +1,6 @@
 <div class="header-container">
   <div class="wrapper">
-    <h1>Query settings
+    <h1>Query settings</h1>
   </div>
 </div>
 
@@ -9,6 +9,7 @@
     <div class="alert alert-success" ng-show="setup_saved">
       Settings has been saved, you can now start <a href="#/">the query</a>!
     </div>
+    <div mathjax-bind="test"></div>
     <form ng-submit="setup()">
       <div class="form-group">
         <label>Participant ID</label>
@@ -47,7 +48,7 @@
         </div>
       </div>
 
-      <div class="form-group">
+      <div class="form-group" ng-show="settings.study_type == 1">
         <label>Exploration rate</label>
         <input type="text" placeholder="Exploration rate" class="form-control" required ng-model="settings.exploration_rate">
       </div>
