@@ -18,6 +18,7 @@ import scipy
 import os
 import string
 import json
+from subprocess import Popen, PIPE, STDOUT
 
 from nltk.corpus import stopwords
 from nltk.stem import SnowballStemmer
@@ -55,6 +56,9 @@ tfidf_prefix =      linrel_prefix #os.path.join(settings.BASE_DIR, 'tfidf')
 linrel_features =    os.path.join(settings.BASE_DIR, 'linrel_features.json')
 tfidf_features =    linrel_features #os.path.join(settings.BASE_DIR, 'tfidf_features.json')
 
+bm25_prefix = os.path.join(settings.BASE_DIR, 'bm25')
+bm25_features = os.path.join(settings.BASE_DIR, 'bm25_features.json')
+
 
 def save_sparse_linrel(m) :
     save_sparse(m, linrel_prefix)
@@ -80,6 +84,25 @@ def save_features_linrel(m) :
 def load_features_linrel() :
     return load_features(linrel_features)
 
+def save_sparse_bm25(m) :
+    save_sparse(m, bm25_prefix)
+
+def load_sparse_bm25() :
+    return load_sparse(bm25_prefix)
+
+def save_features_bm25(m) :
+    save_features(m, bm25_features)
+
+def load_features_bm25() :
+    return load_features(bm25_features)
+
+def remove_latex(s) :
+    p = Popen(['detex', '-l'], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    
+    out,err = p.communicate(s)
+
+    return out
+
 #
 # corpus related functions
 #
@@ -94,6 +117,7 @@ def build_corpus() :
 
     for a in Article.objects.all() :
         s = a.title + ' ' + a.abstract
+        s = remove_latex(s)
         s = s.lower().strip()
         s = ''.join([ i if i not in bad_chars else ' ' for i in s ])
 

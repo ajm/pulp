@@ -18,6 +18,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import normalize
 from explore.models import Article
 from explore.utils import *
+from explore.arxiv import ArxivCleaner
 import numpy as np
 
 class Command(BaseCommand) :
@@ -31,7 +32,10 @@ class Command(BaseCommand) :
         self.stdout.write("Building matrix from %d articles... " % Article.objects.count(), ending='')
         self.stdout.flush()
 
-        m = v.fit_transform(build_corpus())
+        #m = v.fit_transform(build_corpus())
+        arxiv = ArxivCleaner()
+        m = v.fit_transform(arxiv.build_corpus(Article.objects.all(), stem=True))
+        
         self.stdout.write("done!\n")
 
         self.stdout.write("Normalising... ", ending='')
