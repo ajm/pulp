@@ -1,3 +1,4 @@
+from sys import stderr
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from nltk.stem import SnowballStemmer
 import enchant
