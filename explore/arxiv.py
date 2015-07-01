@@ -115,7 +115,7 @@ class ArxivCleaner(object) :
 
         return wordlist
 
-    def build_arxiv_corpus(self, articles, stem=True) :
+    def build_corpus(self, articles, stem=True) :
         num_articles = len(articles)
         wordlist = self.build_wordlist(articles)
         corpus = []
