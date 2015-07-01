@@ -61,6 +61,9 @@ class ArxivCleaner(object) :
     def string_tokenize(self, s) :
         return s.split()
 
+    def tokens_remove_nonwordlist(self, wordlist, tokens) :
+        return [ t for t in tokens if t in wordlist ]
+
     def tokens_stringize(self, tokens) :
         return " ".join(tokens)
 
