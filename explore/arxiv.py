@@ -73,7 +73,7 @@ class ArxivCleaner(object) :
     def string_remove_punctuation(self, s) :
         return self.badchars_pattern.sub(' ', s)
 
-    def get_good_words(s) :
+    def get_good_words(self, s) :
         return self.tokens_remove_nonenglish(
                  self.string_tokenize(
                    self.string_remove_punctuation(
