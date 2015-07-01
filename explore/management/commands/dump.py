@@ -18,7 +18,7 @@ from explore.models import Experiment, ExperimentIteration, ArticleFeedback
 from explore.utils import *
 
 from sys import stderr
-
+import datetime
 
 class Command(BaseCommand) :
     args = 'no arguments'
@@ -51,7 +51,8 @@ class Command(BaseCommand) :
                     ])
 
         def unix_time(dt) :
-            return (dt - datetime.datetime.utcfromtimestamp(0)).total_seconds()
+            return dt.strftime('%s')
+            #return (dt - datetime.datetime.fromtimestamp(0)).total_seconds()
 
         for e in Experiment.objects.all() :
             iterations = ExperimentIteration.objects.filter(experiment=e)
