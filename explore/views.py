@@ -360,11 +360,11 @@ def store_feedback(e, post) :
     print selected_documents
 
     if ei.iteration == 0 :
-        print "exploratory = '%s'" % post['exploratory']
-        e.classifier = int(post['exploratory']) == 1
+        print "exploratory = '%s'" % post.get('exploratory', 0)
+        e.classifier = int(post.get('exploratory', 0)) == 1
 
         # XXX double-check that the 'full system' is type 0
-        if e.classifier and e.study_type == 0 :
+        if e.classifier and e.study_type == 1 :
             print "applying exploration"
             e.exploration_rate = e.base_exploration_rate
 
@@ -533,7 +533,7 @@ def setup_experiment(request) :
 
     try :
         participant_id      = request.GET['participant_id']
-        experiment_id       = request.GET['experiment_id']
+        experiment_id       = int(request.GET['experiment_id'])
         task_type           = int(request.GET['task_type'])
         exploration_rate    = float(request.GET['exploration_rate'])
 

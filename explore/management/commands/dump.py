@@ -35,6 +35,7 @@ class Command(BaseCommand) :
                     "study_type",
                     "base_erate",
                     "used_erate",
+                    "classifier",
                     "num_docs",
                     "num_iter",
                     "timestamps"])
@@ -66,6 +67,7 @@ class Command(BaseCommand) :
                                 e.study_type,
                                 e.base_exploration_rate,
                                 e.exploration_rate,
+                                e.classifier,
                                 e.number_of_documents,
                                 e.number_of_iterations,
                                 timestamps
