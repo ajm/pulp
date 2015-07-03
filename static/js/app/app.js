@@ -34,8 +34,7 @@ SearchApp.run(function($rootScope){
 		task_type: 0,
 		exploration_rate: 0,
 		query_time: 15,
-		study_type: 1,
-		baseline_system: false
+		study_type: 1
 	};
 });
 

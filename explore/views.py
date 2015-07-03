@@ -67,40 +67,12 @@ def logout_view(request):
     #logout(request)
     return Response(status=status.HTTP_200_OK)
 
-def get_top_articles_tfidf_old(query_terms, n) :
-    """
-    return top n articles using tfidf terms
-    """
-
-    try :
-        tfidf_query = reduce(operator.or_, [ Q(term=t) for t in query_terms ])
-        tfidfs = ArticleTFIDF.objects.select_related('article').filter(tfidf_query)
-        #articles = get_top_articles(tfidfs, num_articles)
-        #print "%d articles found (%s)" % (len(articles), ','.join([str(a.id) for a in articles]))
-
-    except ArticleTFIDF.DoesNotExist :
-        print "no articles found containing search terms"
-        return []
-
-    tmp = {}
-
-    for tfidf in tfidfs :
-        if tfidf.article not in tmp :
-            tmp[tfidf.article] = 1.0
-
-        tmp[tfidf.article] *= tfidf.value
-
-    ranking = sorted(tmp.items(), key=lambda x : x[1], reverse=True)
-
-    return [ r[0] for r in ranking[:n] ]
-
 # query terms - a list of stemmed query words
 # n - the number of articles to return
 #@timecall(immediate=True)
-def get_top_articles_tfidf(query_terms, n) :
-    tfidf = load_sparse_tfidf()
-    features = load_features_tfidf()
-    #articles = Article.objects.all()
+def get_top_articles_bm25(query_terms, n) :
+    bm25 = load_sparse_bm25()
+    features = load_features_bm25()
 
     tmp = {}
 
@@ -110,14 +82,12 @@ def get_top_articles_tfidf(query_terms, n) :
 
         findex = features[qt]
 
-        #print numpy.nonzero(tfidf[:, findex])
-
-        for aindex in numpy.nonzero(tfidf[:, findex])[0] :
+        for aindex in numpy.nonzero(bm25[:, findex])[0] :
             akey = aindex.item()
             if akey not in tmp :
                 tmp[akey] = 0.0
 
-            tmp[akey] += tfidf[aindex,findex]
+            tmp[akey] += bm25[aindex,findex]
 
     ranking = sorted(tmp.items(), key=lambda x : x[1], reverse=True)
 
@@ -366,8 +336,8 @@ def textual_query(request) :
         e.number_of_documents = num_articles
         #e.query = query_string
 
-        # get documents with TFIDF-based ranking
-        articles = get_top_articles_tfidf(query_terms, num_articles)
+        # get documents with okapi bm25-based ranking
+        articles = get_top_articles_bm25(query_terms, num_articles)
 
         # add random articles if we don't have enough
         fill_count = num_articles - len(articles)

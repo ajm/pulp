@@ -23,7 +23,7 @@ SearchApp.service('Api', function($http){
   }
 
   this.setup = function(options){
-    return $http.get('/setup', { params: { participant_id: options.participant_id, task_type: options.task_type, exploration_rate: options.exploration_rate, experiment_id: options.study_type, baseline_system: ( options.baseline_system ? 1 : 0 ) } })
+    return $http.get('/setup', { params: { participant_id: options.participant_id, task_type: options.task_type, exploration_rate: options.exploration_rate, experiment_id: options.study_type } })
   }
 
   this.end = function(options){
