@@ -5,7 +5,8 @@ SearchApp.controller('SettingsController', function($scope, $rootScope, Api){
       participant_id: $rootScope.settings.participant_id,
       exploration_rate: ( $rootScope.settings.study_type == 1 ? $rootScope.settings.exploration_rate : 1 ),
       task_type: $rootScope.settings.task_type,
-      study_type: $rootScope.settings.study_type
+      study_type: $rootScope.settings.study_type,
+      baseline_system: $rootScope.settings.baseline_system
     }).success(function(){
       $scope.setup_saved = true;
     });

@@ -429,7 +429,7 @@ def selection_query(request) :
 
         try :
             store_feedback(e, post)
-        
+
         except Exception :
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -533,7 +533,7 @@ def end_search(request) :
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         e = get_experiment(user)
-        
+
         try :
             store_feedback(e, post)
 
