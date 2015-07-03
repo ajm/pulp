@@ -361,9 +361,10 @@ def store_feedback(e, post) :
 
     if ei.iteration == 0 :
         print "exploratory = '%s'" % post['exploratory']
-        apply_exploration = int(post['exploratory']) == 1
+        e.classifier = int(post['exploratory']) == 1
 
-        if apply_exploration :
+        # XXX double-check that the 'full system' is type 0
+        if e.classifier and e.study_type == 0 :
             print "applying exploration"
             e.exploration_rate = e.base_exploration_rate
 
@@ -567,3 +568,4 @@ def setup_experiment(request) :
     e.save()
 
     return Response(status=status.HTTP_200_OK)
+
