@@ -363,10 +363,11 @@ def store_feedback(e, post) :
         print "exploratory = '%s'" % post.get('exploratory', 0)
         e.classifier = int(post.get('exploratory', 0)) == 1
 
-        # XXX double-check that the 'full system' is type 0
         if e.classifier and e.study_type == 1 :
-            print "applying exploration"
+            print "USING EXPLORATION (classifier = %s, study_type = %s)" % (str(e.classifier), 'full' if e.study_type == 1 else 'baseline')
             e.exploration_rate = e.base_exploration_rate
+        else :
+            print "NOT USING EXPLORATION (classifier = %s, study_type = %s)" % (str(e.classifier), 'full' if e.study_type == 1 else 'baseline')
 
     print "exploration rate set to %.2f" % e.exploration_rate
 
@@ -566,6 +567,10 @@ def setup_experiment(request) :
     e.number_of_documents   = DEFAULT_NUM_ARTICLES
     e.base_exploration_rate = exploration_rate
     e.save()
+
+    print "STUDY TYPE: %s" % ("full system" if e.study_type == 1 else "baseline")
+    print "TASK TYPE: %s" % ("exploratory" if e.task_type == Experiment.EXPLORATORY else "lookup")
+    print "EXPLORATION RATE: %.2f" % e.base_exploration_rate
 
     return Response(status=status.HTTP_200_OK)
 
