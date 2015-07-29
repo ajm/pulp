@@ -19,10 +19,10 @@ SearchApp.config(function($routeProvider){
 		controller: 'SettingsController',
 		templateUrl: 'static/js/app/views/settings.html'
 	})
-	/*.when('/topic/:id', {
-		controller: 'TopicController',
-		templateUrl: 'static/js/app/views/topic.html'
-	})*/
+	.when('/ratings', {
+		controller: 'RatingsController',
+		templateUrl: 'static/js/app/views/ratings.html'
+	})
 	.otherwise({
 		redirectTo: '/settings'
 	});
@@ -35,6 +35,12 @@ SearchApp.run(function($rootScope){
 		exploration_rate: 0,
 		query_time: 15,
 		study_type: 1
+	};
+
+	$rootScope.experiment_data = {
+		articles: [],
+		query: null,
+		classifier_value: null
 	};
 });
 

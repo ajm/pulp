@@ -11,7 +11,7 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 		query_timer = $interval(function(){
 				$scope.seconds_left--;
 
-				if($scope.seconds_left == 0){
+				if($scope.seconds_left <= 0){
 					$scope.end();
 				}
 		}, 1000)
@@ -62,6 +62,13 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 	}
 
   $scope.touch_article = function(article){
+		$rootScope.experiment_data.articles.push({
+				id: article.id,
+				title: article.raw_title,
+				url: article.url,
+				rating: 1
+		});
+
     article.clicked = true;
     article.reading_started = new Date();
 
@@ -80,6 +87,19 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 
 	$scope.toggle_bookmark = function(result){
 		result.bookmarked = !result.bookmarked;
+
+		if(result.bookmarked){
+			$rootScope.experiment_data.articles.push({
+					id: result.id,
+					title: result.raw_title,
+					url: result.url,
+					rating: 1
+			});
+		}else{
+			_($rootScope.experiment_data.articles).remove(function(article){
+				return article.id == result.id
+			});
+		}
 	}
 
 	$scope.next = function(){
@@ -90,6 +110,7 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 
 		if($scope.iteration == 1){
 			options.exploratory = is_exploratory() ? 1 : 0;
+			$rootScope.experiment_data.classifier_value = ( options.exploratory == 1 ? 'exploratory' : 'look up' )
 		}
 
     UI.back_to_top();
@@ -143,6 +164,15 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 	}
 
 	$scope.end = function(){
+		if($scope.viewed_article){
+			var now = new Date();
+	    var start = $scope.viewed_article.reading_started;
+	    var diff = (now.getTime() - start.getTime()) / 1000;
+
+	    $scope.viewed_article.reading_ended = now;
+	    $scope.viewed_article.reading_time = diff;
+		}
+
 		var options = {
 			results: $scope.results,
 			participant_id: $rootScope.settings.participant_id
@@ -151,10 +181,9 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 		$interval.cancel(query_timer);
 
 		Api.end(options).success(function(){
-			window.open('https://docs.google.com/forms/d/1XEZ1pJ093jQVu8msJGeegK6H3mOf6m7LZwzqeXwMCZU/viewform', '_blank');
-			alert('The query has ended! Please, fill in the form opened in the new tab');
+			alert('The query has ended!');
 
-			$location.path('/settings');
+			$location.path('/ratings');
 		});
 
 		/*$scope.searching = false;
@@ -218,6 +247,7 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
   			//result.abstract = $sce.trustAsHtml(result.abstract);
 				result.plain_abstract = $sce.trustAsHtml(result.abstract);
   			result.title = $sce.trustAsHtml(String(result.title).replace(/<[^>]+>/gm, ''));
+				result.raw_title = String(result.title).replace(/<[^>]+>/gm, '');
 				result.author = $sce.trustAsHtml(result.author);
 
         result.trusted_url = $sce.trustAsResourceUrl(result.url);

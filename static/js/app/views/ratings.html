@@ -1,0 +1,29 @@
+<div class="header-container">
+  <div class="wrapper">
+    <h1>Fill the answer sheet and rate your articles</h1>
+  </div>
+</div>
+
+<div id="article-ratings-container">
+  <div class="wrapper">
+    <div class="alert alert-success" ng-show="ratings_saved">
+      Your ratings has been saved. Thank you for participating!
+    </div>
+
+    <h2>1. Fill the answer sheet</h2>
+    <p>
+      Please, fill in <a href="https://docs.google.com/forms/d/1XEZ1pJ093jQVu8msJGeegK6H3mOf6m7LZwzqeXwMCZU/viewform" target="_blank">this form</a> and rate the articles you've chosen.
+    </p>
+    <h2>2. Rate your articles</h2>
+    <ul class="list-unstyled">
+      <li ng-repeat="article in experiment_data.articles">
+        <h3><a ng-href="{{article.url}}" target="_blank">{{article.title}}</a></h3>
+        <div rate ng-model="article.rating"></div>
+      </li>
+    </ul>
+
+    <div style="margin-top: 25px;">
+      <button type="submit" class="btn btn-blue btn-rounded" ng-click="save_ratings()" ng-hide="ratings_saved">Save the feedback</button>
+    </div>
+  </div>
+</div>

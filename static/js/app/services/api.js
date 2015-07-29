@@ -31,4 +31,8 @@ SearchApp.service('Api', function($http){
 
     return $http.post('/end', params);
   }
+
+  this.ratings = function(data){
+    return $http.post('/ratings', data);
+  }
 });

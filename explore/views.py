@@ -37,6 +37,7 @@ import operator
 import numpy
 import json
 import time
+import os.path
 
 #from profilehooks import profile, coverage, timecall
 
@@ -574,3 +575,34 @@ def setup_experiment(request) :
 
     return Response(status=status.HTTP_200_OK)
 
+@api_view(['POST'])
+def experiment_ratings(request):
+    ratings = json.loads(request.body)
+
+    if('participant_id' not in ratings or 'task_type' not in ratings or 'study_type' not in ratings or 'ratings' not in ratings or 'classifier_value' not in ratings or 'query' not in ratings):
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    ratings_file = open(os.path.dirname(__file__) + '/../ratings.json', 'r')
+    ratings_arr = ratings_file.read()
+    ratings_file.close()
+
+    ratings_file = open(os.path.dirname(__file__) + '/../ratings.json', 'w')
+
+    if(not ratings_arr):
+        ratings_arr = []
+    else:
+        ratings_arr = json.loads(ratings_arr)
+
+    ratings_arr.append({
+        'participant_id': ratings['participant_id'],
+        'task_type': ratings['task_type'],
+        'study_type': ratings['study_type'],
+        'classifier_value': ratings['classifier_value'],
+        'query': ratings['query'],
+        'ratings': ratings['ratings']
+    })
+
+    ratings_file.write(json.dumps(ratings_arr))
+    ratings_file.close()
+
+    return Response(status=status.HTTP_200_OK)

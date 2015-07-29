@@ -40,5 +40,6 @@ urlpatterns = patterns('',
     url(r'^end', views.end_search),
     url(r'^search', views.index),
     url(r'^visualization', views.visualization),
-    url(r'^setup', views.setup_experiment)
+    url(r'^setup', views.setup_experiment),
+    url(r'^ratings', views.experiment_ratings)
 )

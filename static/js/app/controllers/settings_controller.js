@@ -7,6 +7,7 @@ SearchApp.controller('SettingsController', function($scope, $rootScope, Api){
       task_type: $rootScope.settings.task_type,
       study_type: $rootScope.settings.study_type
     }).success(function(){
+      $rootScope.experiment_data.query = $rootScope.settings.search_query
       $scope.setup_saved = true;
     });
   }
