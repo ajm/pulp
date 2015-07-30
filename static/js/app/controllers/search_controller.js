@@ -181,14 +181,14 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 		$interval.cancel(query_timer);
 
 		Api.end(options).success(function(){
+			$rootScope.experiment_data.articles = _.uniq($rootScope.experiment_data.articles, function(article){
+				return article.id;
+			});
+
 			alert('The query has ended!');
 
 			$location.path('/ratings');
 		});
-
-		/*$scope.searching = false;
-		$scope.results = [];
-		$scope.search_keyword = '';*/
 	}
 
 	$scope.toggle_highlight = function(){

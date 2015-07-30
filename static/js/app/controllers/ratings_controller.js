@@ -28,6 +28,8 @@ SearchApp.controller('RatingsController', function($scope, $rootScope, $location
     		study_type: 1
     	};
 
+      $rootScope.experiment_data = {};
+
       alert('Thanks for participating!');
 
       $location.path('/settings');
