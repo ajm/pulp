@@ -28,7 +28,11 @@ SearchApp.controller('RatingsController', function($scope, $rootScope, $location
     		study_type: 1
     	};
 
-      $rootScope.experiment_data = {};
+      $rootScope.experiment_data = {
+    		articles: [],
+    		query: null,
+    		classifier_value: null
+    	};
 
       alert('Thanks for participating!');
 
