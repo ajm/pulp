@@ -7,7 +7,7 @@ SearchApp.service('Classifier', function(){
     var query_duration = options.query_duration;
 
     Exploratory = true;
-    if (query_length <= 5) {
+    if (query_length < 4) {
     	if (reading_time <= 131) {
     		if (cumulative_clicks <=0) {
     			Exploratory = true;
@@ -30,7 +30,7 @@ SearchApp.service('Classifier', function(){
     		}
     	}
     }
-    else if( query_length > 5){
+    else if( query_length >= 4){
     	Exploratory = false;
     }
 
