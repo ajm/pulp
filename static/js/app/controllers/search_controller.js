@@ -1,5 +1,12 @@
 SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$location", "$interval", "$anchorScroll", "Api", "Classifier", function($scope, $rootScope, $sce, $location, $interval, $anchorScroll, Api, Classifier){
 
+	Api.setup({
+		participant_id: 1,
+		exploration_rate: 1,
+		task_type:  1,
+		study_type: 1
+	});
+
 	$rootScope.settings = {
 		participant_id: 1
 	};
