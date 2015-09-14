@@ -484,7 +484,7 @@ def system_state(request) :
 
         print "start = %d, count = %d" % (start, count)
 
-        articles, keyword_stats, article_stats = get_top_articles_linrel(e, start, count, 0.1)
+        articles, keyword_stats, article_stats = get_top_articles_linrel(e, start, count, e.exploration_rate)
         serializer = ArticleSerializer(articles, many=True)
 
         return Response({'article_data' : article_stats, 'keywords' : keyword_stats, 'all_articles' : serializer.data})
@@ -606,3 +606,53 @@ def experiment_ratings(request):
     ratings_file.close()
 
     return Response(status=status.HTTP_200_OK)
+
+def get_topics(articles, normalise) :
+    result = []
+    
+    for a in articles :
+        tmp = {
+            'article_id'    : a.id,
+            'topics'        : []
+          }   
+
+        for tw in TopicWeight.objects.filter(article=a) :
+            tmp['topics'].append({
+                'label'     : tw.topic.label,
+                'weight'    : tw.weight
+              })
+
+        if normalise :
+            weight_sum = sum([ t['weight'] for t in tmp['topics'] ])
+            for t in tmp['topics'] :
+                t['weight'] /= weight_sum
+
+        result.append(tmp)
+
+    return result
+
+@api_view(['GET'])
+def topics(request) :
+    #/topics?from=0&to=100
+
+    try :
+        from_article = request.GET['from']
+        to_article = request.GET['to']
+        normalise = request.GET.get('normalise', 1)
+
+    except :
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    if to_article <= from_article :
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+    e = get_experiment(request.session.session_key)
+
+    articles, keyword_stats, article_stats = get_top_articles_linrel(e,
+                                                                     from_article,
+                                                                     to_article - from_article,
+                                                                     e.exploration_rate)
+
+    return Response(get_topics(articles, normalise))
+

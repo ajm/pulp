@@ -16,6 +16,13 @@
 from django.db import models
 
 
+class Topic(models.Model) :
+    label     = models.CharField(max_length=512)
+
+#class TopicKeyword(models.Model) :
+#    topic    = models.ForeignKey(Topic)
+#    keyword  = models.CharField(max_length=128)
+
 class Article(models.Model) :
     title    = models.CharField(max_length=200)
     author   = models.CharField(max_length=200)
@@ -33,6 +40,11 @@ class ArticleTFIDF(models.Model) :
 
     def __unicode__(self) :
         return u'%s %s %.3f' % (self.__class__.__name__, self.term, self.value)
+
+class TopicWeight(models.Model) :
+    topic    = models.ForeignKey(Topic)
+    article  = models.ForeignKey(Article)
+    weight   = models.FloatField(default=0.0)
 
 class User(models.Model) :
     username = models.CharField(max_length=100, blank=False)

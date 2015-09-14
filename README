@@ -1,5 +1,5 @@
 
-# make a virtual environment
+# make a virtual environment (if necessary)
 virtualenv env
 source ./env/bin/activate
 
@@ -13,8 +13,10 @@ pip install scikit-learn
 
 # sync and build article database
 python manage.py syncdb
-python manage.py xml2db JMLR.xml
-python manage.py tfidf
+python manage.py topics2db <topics.txt>
+python manage.py xml2db <articles.xml>
+python manage.py mapping2db <article_topics.txt>
+python manage.py okapibm25
 python manage.py linrel
 
 # run testing webserver

@@ -15,6 +15,7 @@
 
 import xml.sax 
 from django.core.management.base import BaseCommand, CommandError
+from django.db import transaction
 from explore.models import Article
 from sys import stderr
 
@@ -75,7 +76,8 @@ class Command(BaseCommand) :
             pre_count = Article.objects.count()
 
             try :
-                parser.parse(open(xmlfile))
+                with transaction.atomic() :
+                    parser.parse(open(xmlfile))
 
             except IOError, ioe :
                 raise CommandError(str(ioe))
