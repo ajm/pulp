@@ -32,6 +32,23 @@ SearchApp.service('Api', function($http){
     return $http.post('/end', params);
   }
 
+  this.topics = function(options){
+    return {
+      then: function(callback){
+        var temp_topics = ['Java', 'Programming', 'Algorithms', 'Distributed systems', 'Python', 'Big data', 'Software development'];
+        var topics = [];
+
+        _.times(100, function(){
+  				topics.push({
+  					topics: _(temp_topics).shuffle().take(3).map(function(topic){ return { label: topic, weight: Math.random() } }).value()
+  				});
+  			});
+
+        callback(topics);
+      }
+    }
+  }
+
   this.ratings = function(data){
     return $http.post('/ratings', data);
   }

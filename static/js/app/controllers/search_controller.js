@@ -1,12 +1,13 @@
 SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$location", "$interval", "Api", "Classifier", function($scope, $rootScope, $sce, $location, $interval, Api, Classifier){
 
 	$scope.seconds_left = 0;
+	$scope.topics_pointer = 0;
 	var query_timer = null;
 
 	if(!$rootScope.settings || !$rootScope.settings.participant_id){
 		$location.path('/settings');
 	}else if($rootScope.settings.query_time){
-		$scope.seconds_left = parseInt($scope.settings.query_time) * 60;
+		/*$scope.seconds_left = parseInt($scope.settings.query_time) * 60;
 
 		query_timer = $interval(function(){
 				$scope.seconds_left--;
@@ -14,7 +15,7 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 				if($scope.seconds_left <= 0){
 					$scope.end();
 				}
-		}, 1000)
+		}, 1000)*/
 	}
 
 	$scope.chosen_highlight_color_index = 0;
@@ -178,7 +179,7 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 			participant_id: $rootScope.settings.participant_id
 		};
 
-		$interval.cancel(query_timer);
+		//$interval.cancel(query_timer);
 
 		Api.end(options).success(function(){
 			$rootScope.experiment_data.articles = _.uniq($rootScope.experiment_data.articles, function(article){
@@ -189,6 +190,15 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 
 			$location.path('/ratings');
 		});
+	}
+
+	$scope.more_topics = function(){
+		$scope.topics_pointer += 100;
+
+		Api.topics({ start: 0, end: $scope.topics_pointer })
+			.then(function(topics){
+				$scope.visualization_data = { topics: topics, append: true };
+			});
 	}
 
 	$scope.toggle_highlight = function(){
@@ -242,9 +252,10 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 	}
 
 	var init_results = function(articles){
+		$scope.topics = [];
+
 		$scope.results.forEach(function(result){
   			result.bookmarked = false;
-  			//result.abstract = $sce.trustAsHtml(result.abstract);
 				result.plain_abstract = $sce.trustAsHtml(result.abstract);
   			result.title = $sce.trustAsHtml(String(result.title).replace(/<[^>]+>/gm, ''));
 				result.raw_title = String(result.title).replace(/<[^>]+>/gm, '');
@@ -256,7 +267,12 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 
         result.abstract_synopsis = $sce.trustAsHtml(synopsis);
   			result.full_length_abstract = ( String(result.abstract).length == String(result.abstract_synopsis).length );
-  		});
+			});
+
+			Api.topics({ start: 0, end: 100 })
+				.then(function(topics){
+					$scope.visualization_data = { topics: topics, append: false };
+				});
 	}
 
 	var reset_variables = function(){
