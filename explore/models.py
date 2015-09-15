@@ -83,7 +83,7 @@ class Experiment(models.Model) :
     state                = models.CharField(max_length=1,
                                             choices=EXPERIMENT_STATES,
                                             default=RUNNING)
-    #query = models.CharField(max_length=256)
+    query = models.CharField(max_length=1000)
 
     def __unicode__(self) :
         return u'%s %s %s (%s)' % (self.__class__.__name__, self.id, self.user.username, self.state)

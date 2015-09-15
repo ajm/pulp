@@ -351,6 +351,7 @@ def textual_query(request) :
 
         # create new experiment
         e = get_experiment(user)
+        e.query = query_string
         e.number_of_documents = num_articles
         #e.query = query_string
 
@@ -673,8 +674,17 @@ def topics(request) :
     except User.DoesNotExist :
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
-
     e = get_experiment(user)
+
+    print "#iterations =", e.number_of_iterations
+
+    if e.number_of_iterations == 0 :
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    if e.number_of_iterations == 1 :
+        articles = get_top_articles_bm25(e.query, to_article)[from_article:]
+        return Response(get_topics(articles, normalise))
+
 
     articles, keyword_stats, article_stats, stems = get_top_articles_linrel(e,
                                                                      from_article,
