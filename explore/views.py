@@ -197,6 +197,22 @@ def get_keyword_stats(articles, keyword_weights) :
 
     return keyword_stats
 
+def get_stems(articles) :
+    stems = collections.defaultdict(list)
+
+    stopwords = get_stop_words()
+    stemmer = SnowballStemmer('english')
+
+    for i in articles :
+        for word,stem in [ (word,stemmer.stem(word)) for word in clean_text(i.title + ' ' + i.abstract).split() if word not in stopwords ] :
+            if stem not in stems[i.id] :
+                stems[i.id].append(stem)
+
+    for k in stems :
+        stems[k].sort()
+
+    return dict(stems)
+
 def get_article_stats(articles, exploitation, exploration) :
     article_stats = {}
 
@@ -230,7 +246,8 @@ def get_top_articles_linrel(e, start, count, exploration) :
 
     return [ tmp[id] for id in articles_new_dbid ], \
            get_keyword_stats(articles_new_obj, kw_weights), \
-           get_article_stats(articles_new_dbid, mean, variance)
+           get_article_stats(articles_new_dbid, mean, variance), \
+           get_stems(articles_new_obj)
 
 def get_running_experiments(user) :
     return Experiment.objects.filter(user=user, state=Experiment.RUNNING)
@@ -442,10 +459,8 @@ def selection_query(request) :
 
         # get documents with ML algorithm
         # remember to exclude all the articles that the user has already been shown
-        rand_articles, keywords, article_stats = get_top_articles_linrel(e,
-                                                                         0,
-                                                                         e.number_of_documents,
-                                                                         e.exploration_rate)
+#        all_articles = get_unseen_articles(e)
+        rand_articles, keywords, article_stats, stems = get_top_articles_linrel(e, 0, e.number_of_documents, e.exploration_rate)
 
         print "%d articles (%s)" % (len(rand_articles), ','.join([str(a.id) for a in rand_articles]))
 
@@ -484,10 +499,15 @@ def system_state(request) :
 
         print "start = %d, count = %d" % (start, count)
 
-        articles, keyword_stats, article_stats = get_top_articles_linrel(e, start, count, e.exploration_rate)
-        serializer = ArticleSerializer(articles, many=True)
+        articles, keyword_stats, article_stats, stems = get_top_articles_linrel(e, start, count, e.exploration_rate)
+        serializer = ArticleSerializer(articles, many=True)    
 
-        return Response({'article_data' : article_stats, 'keywords' : keyword_stats, 'all_articles' : serializer.data})
+        for i in serializer.data :
+            i['stemming'] = stems[i['id']]
+
+        return Response({'article_data' : article_stats,
+                         'keywords'     : keyword_stats,
+                         'all_articles' : serializer.data })
 
 @api_view(['POST'])
 def end_search(request) :
