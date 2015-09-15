@@ -143,7 +143,11 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
         highlight();
       }
 
-      $scope.loading = false;
+			Api.topics({ from: 0, to: 100, participant_id: $rootScope.settings.participant_id, normalise: 0 })
+				.then(function(topics){
+					$scope.visualization_data = { topics: topics.data, append: false };
+					$scope.loading = false;
+				});
     })
     .error(function(){
       $scope.results = [];
@@ -195,9 +199,12 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 	$scope.more_topics = function(){
 		$scope.topics_pointer += 100;
 
-		Api.topics({ start: 0, end: $scope.topics_pointer })
+		$scope.loading_topics = true;
+
+		Api.topics({ from: $scope.topics_pointer, to: $scope.topics_pointer + 100, participant_id: $rootScope.settings.participant_id, normalise: 0 })
 			.then(function(topics){
-				$scope.visualization_data = { topics: topics, append: true };
+				$scope.visualization_data = { topics: topics.data, append: true };
+				$scope.loading_topics = false;
 			});
 	}
 
@@ -268,11 +275,6 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
         result.abstract_synopsis = $sce.trustAsHtml(synopsis);
   			result.full_length_abstract = ( String(result.abstract).length == String(result.abstract_synopsis).length );
 			});
-
-			Api.topics({ start: 0, end: 100 })
-				.then(function(topics){
-					$scope.visualization_data = { topics: topics, append: false };
-				});
 	}
 
 	var reset_variables = function(){

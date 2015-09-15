@@ -141,11 +141,18 @@
             </ul>
           </div>
 
-          <div id="topics-container" topics-diagram ng-model="visualization_data">
+          <div id="topics-container" topics-diagram ng-model="visualization_data" ng-hide="iteration == 1 || !visualization_data">
             <div id="current-iteration-indicator">
               <div id="iteration-label">Current iteration</div>
             </div>
-            <div id="more-topic-info" ng-click="more_topics()"><i class="fa fa-plus"></i> Show me more</div>
+            <div id="more-topic-info" ng-click="more_topics()">
+              <span ng-hide="loading_topics">
+                <i class="fa fa-plus"></i> Show me more
+              </span>
+              <span ng-show="loading_topics">
+                <i class="fa fa-spin fa-spinner"></i> Loading...
+              </span>
+            </div>
           </div>
 
           <!--<button id="back-to-top" class="btn btn-grey btn-rounded" ng-click="back_to_top();"><i class="fa fa-angle-up fa-sm marg-right"></i>Back to top</button>-->

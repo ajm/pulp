@@ -25,7 +25,6 @@ SearchApp.service('Api', function($http){
   this.setup = function(options){
     return $http.get('/setup', { params: { participant_id: options.participant_id, task_type: options.task_type, exploration_rate: options.exploration_rate, experiment_id: options.study_type } })
   }
-
   this.end = function(options){
     var params = parseIterationData(options);
 
@@ -33,7 +32,10 @@ SearchApp.service('Api', function($http){
   }
 
   this.topics = function(options){
-    return {
+
+    return $http.get('/topics', { params: options });
+
+    /*return {
       then: function(callback){
         var temp_topics = ['Java', 'Programming', 'Algorithms', 'Distributed systems', 'Python', 'Big data', 'Software development'];
         var topics = [];
@@ -46,7 +48,7 @@ SearchApp.service('Api', function($http){
 
         callback(topics);
       }
-    }
+    }*/
   }
 
   this.ratings = function(data){
