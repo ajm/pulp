@@ -71,7 +71,7 @@ class Command(BaseCommand) :
                     a = articles[int(data[0])]
                 
                     #with transaction.atomic() :
-                    for i in range(2, 2 + NUM_TOPICS_TO_STORE, 2) : #range(2, len(data), 2) :
+                    for i in range(2, 2 + (2 * NUM_TOPICS_TO_STORE), 2) : #range(2, len(data), 2) :
                     
                         tw = TopicWeight()
 
