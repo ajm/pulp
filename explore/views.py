@@ -658,7 +658,7 @@ def topics(request) :
     try :
         from_article = int(request.GET['from'])
         to_article = int(request.GET['to'])
-        normalise = request.GET.get('normalise', 1)
+        normalise = int(request.GET.get('normalise', 1))
         participant_id = request.GET['participant_id']
 
     except :
