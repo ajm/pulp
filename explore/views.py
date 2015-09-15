@@ -629,12 +629,12 @@ def experiment_ratings(request):
 
 def get_topics(articles, normalise) :
     result = []
-    
+
     for a in articles :
         tmp = {
             'article_id'    : a.id,
             'topics'        : []
-          }   
+          }
 
         for tw in TopicWeight.objects.filter(article=a) :
             tmp['topics'].append({
@@ -656,8 +656,8 @@ def topics(request) :
     #/topics?from=0&to=100&participant_id=1
 
     try :
-        from_article = request.GET['from']
-        to_article = request.GET['to']
+        from_article = int(request.GET['from'])
+        to_article = int(request.GET['to'])
         normalise = request.GET.get('normalise', 1)
         participant_id = request.GET['participant_id']
 
@@ -682,4 +682,3 @@ def topics(request) :
                                                                      e.exploration_rate)
 
     return Response(get_topics(articles, normalise))
-
