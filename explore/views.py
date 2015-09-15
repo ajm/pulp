@@ -633,12 +633,13 @@ def get_topics(articles, normalise) :
 
 @api_view(['GET'])
 def topics(request) :
-    #/topics?from=0&to=100
+    #/topics?from=0&to=100&participant_id=1
 
     try :
         from_article = request.GET['from']
         to_article = request.GET['to']
         normalise = request.GET.get('normalise', 1)
+        participant_id = request.GET['participant_id']
 
     except :
         return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -646,8 +647,14 @@ def topics(request) :
     if to_article <= from_article :
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
+    try :
+        user = User.objects.get(username=participant_id)
 
-    e = get_experiment(request.session.session_key)
+    except User.DoesNotExist :
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+    e = get_experiment(user)
 
     articles, keyword_stats, article_stats = get_top_articles_linrel(e,
                                                                      from_article,
