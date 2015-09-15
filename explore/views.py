@@ -22,7 +22,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView # class-based views
 from rest_framework.decorators import api_view # for function-based views
 
-from explore.models import Article, ArticleTFIDF, Experiment, ExperimentIteration, ArticleFeedback, User
+from explore.models import Article, ArticleTFIDF, Experiment, ExperimentIteration, ArticleFeedback, User, TopicWeight
 from explore.serializers import ArticleSerializer
 from explore.utils import *
 
@@ -676,9 +676,10 @@ def topics(request) :
 
     e = get_experiment(user)
 
-    articles, keyword_stats, article_stats = get_top_articles_linrel(e,
+    articles, keyword_stats, article_stats, stems = get_top_articles_linrel(e,
                                                                      from_article,
                                                                      to_article - from_article,
                                                                      e.exploration_rate)
 
     return Response(get_topics(articles, normalise))
+
