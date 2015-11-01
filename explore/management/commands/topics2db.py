@@ -25,6 +25,8 @@ class Command(BaseCommand) :
 
     def handle(self, *args, **options) :
 
+        NUM_KEYWORDS = 5
+
         # arxiv_cs_example/topic_top_keywords
         with open(args[0]) as f :
             linenum = 0
@@ -37,17 +39,17 @@ class Command(BaseCommand) :
                     continue
 
                 try :
-                    name,keywords = line.split()
+                    name,something,keywords = line.split('\t')
 
                 except ValueError :
                     print >> stderr, "Error: too many tokens, line %d" % linenum
                     continue
 
-                keywords = keywords.split(',')
+                keywords = keywords.split()
 
                 with transaction.atomic() :
                     t = Topic()
-                    t.label = ','.join(keywords[:3])
+                    t.label = ','.join(keywords[:NUM_KEYWORDS])
                     t.save()
 
                     #for k in keywords :

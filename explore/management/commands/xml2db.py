@@ -18,17 +18,17 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from explore.models import Article
 from sys import stderr
+import datetime
 
 class ArticleParser(xml.sax.ContentHandler) :
     def __init__(self) :
-        self.identity = None
         self.content = None
         self.article = None
         self.count = 0
 
     def cleaned(self) :
         return self.content.replace('\n', ' ').strip()
-    #xml.sax.saxutils.escape(self.content.replace('\n', ' ').strip())
+        #return xml.sax.saxutils.escape(self.content.replace('\n', ' ').strip())
 
     def startElement(self, name, attrs) :
         self.content = ""
@@ -42,9 +42,6 @@ class ArticleParser(xml.sax.ContentHandler) :
     def endElement(self, name) :
         if name == 'article' : 
             if self.article :
-                #if self.identity == 420 :
-                #    print self.article.author
-
                 self.article.save()
                 self.article = None
                 self.count += 1
@@ -52,15 +49,14 @@ class ArticleParser(xml.sax.ContentHandler) :
                 if (self.count % 1000) == 0 :
                     print >> stderr, "read in %d articles" % self.count
 
-        elif name == 'title'    : self.article.title = self.cleaned()
-        elif name == 'author'   : self.article.author = self.cleaned()
+        elif name == 'title'    : self.article.title    = self.cleaned()
+        elif name == 'author'   : self.article.author   = self.cleaned()
         elif name == 'abstract' : self.article.abstract = self.cleaned()
-        elif name == 'venue'    : self.article.venue = self.cleaned()
-        elif name == 'url'      : self.article.url = self.cleaned()
-        elif name == 'id'       : self.identity = int(self.cleaned())
+        elif name == 'venue'    : self.article.venue    = self.cleaned()
+        elif name == 'url'      : self.article.url      = self.cleaned()
+        elif name == 'id'       : self.article.arxivid  = self.cleaned()
+        elif name == 'created'  : self.article.date     = datetime.date(*[ int(i) for i in self.cleaned().split('-') ])
         else : pass
-
-        #print self.content
 
 class Command(BaseCommand) :
     args = '<XML file> <XML file> ...'

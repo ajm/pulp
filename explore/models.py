@@ -14,6 +14,7 @@
 # along with PULP.  If not, see <http://www.gnu.org/licenses/>.
 
 from django.db import models
+import datetime
 
 
 class Topic(models.Model) :
@@ -29,6 +30,8 @@ class Article(models.Model) :
     abstract = models.CharField(max_length=4000)
     venue    = models.CharField(max_length=200)
     url      = models.URLField()
+    date     = models.DateField()
+    arxivid  = models.CharField(max_length=9) # e.g. 0704.0002
 
     def __unicode__(self) :
         return u'%s %s' % (self.__class__.__name__, self.title)
@@ -83,7 +86,10 @@ class Experiment(models.Model) :
     state                = models.CharField(max_length=1,
                                             choices=EXPERIMENT_STATES,
                                             default=RUNNING)
-    query = models.CharField(max_length=1000)
+    query                = models.CharField(max_length=1000)
+    
+    from_date            = models.DateField(default=datetime.date(1900,1,1))
+    to_date              = models.DateField(default=datetime.date(2100,12,31))
 
     def __unicode__(self) :
         return u'%s %s %s (%s)' % (self.__class__.__name__, self.id, self.user.username, self.state)

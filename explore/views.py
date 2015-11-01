@@ -38,6 +38,7 @@ import numpy
 import json
 import time
 import os.path
+import datetime
 
 #from profilehooks import profile, coverage, timecall
 
@@ -68,10 +69,13 @@ def logout_view(request):
     #logout(request)
     return Response(status=status.HTTP_200_OK)
 
+print "caching timestamps..."
+TIMESTAMPS = dict([ (a.id - 1, a.date) for a in Article.objects.all() ]) # -1 because numpy is zero indexed
+
 # query terms - a list of stemmed query words
 # n - the number of articles to return
 #@timecall(immediate=True)
-def get_top_articles_bm25(query_terms, n) :
+def get_top_articles_bm25(query_terms, n, from_date, to_date) :
     bm25 = load_sparse_bm25()
     features = load_features_bm25()
 
@@ -92,28 +96,33 @@ def get_top_articles_bm25(query_terms, n) :
 
     ranking = sorted(tmp.items(), key=lambda x : x[1], reverse=True)
 
-    # XXX
-#    stemmer = SnowballStemmer('english')
-#    for i,r in enumerate(ranking[:n]) :
-#        with open("tfidf_testing.%d" % i, 'w') as f :
-#            a = articles[r[0]]
-#            for word,stem in [ (word,stemmer.stem(word)) for word in a.title.split() + a.abstract.split() ] :
-#                if stem not in features :
-#                    continue
-#
-#                print >> f, stem, word, tfidf[r[0], features[stem]]
-    # XXX
+    # ver.3
+    # find top n articles in date range
+    top_ids = []
+    for i in ranking :
+        if from_date < TIMESTAMPS[i[0]] <= to_date :
+            top_ids.append(i[0] + 1) # +1 because db is one indexed
 
+            if len(top_ids) == n :
+                break
+
+    # ver.1
     #return [ articles[r[0]] for r in ranking[:n] ]
-    id2article = dict([ (a.id, a) for a in Article.objects.filter(pk__in=[ r[0]+1 for r in ranking[:n] ]) ])
-    top_articles = [ id2article[i[0]+1] for i in ranking[:n] ]
+    
+    # ver.2
+    #id2article = dict([ (a.id, a) for a in Article.objects.filter(pk__in=[ r[0]+1 for r in ranking[:n] ]) ])
+    #top_articles = [ id2article[i[0]+1] for i in ranking[:n] ]
+
+    # ver.3
+    id2article = dict([ (a.id, a) for a in Article.objects.filter(pk__in=top_ids) ])
+    top_articles = [ id2article[i] for i in top_ids ]
 
     return top_articles
 
-print "loading sparse linrel"
+print "loading sparse linrel..."
 X = load_sparse_linrel()
 
-def linrel(articles, feedback, data, start, n, mew=1.0, exploration_rate=0.1) :
+def linrel(articles, feedback, data, start, n, from_date, to_date, mew=1.0, exploration_rate=1.0) :
     assert len(articles) == len(feedback), "articles and feedback are not the same length"
 
     X = data
@@ -146,7 +155,8 @@ def linrel(articles, feedback, data, start, n, mew=1.0, exploration_rate=0.1) :
     top_n = []
 
     for i in linrel_ordered[::-1] :
-        if i not in articles :
+        #if i not in articles :
+        if (i not in articles) and (from_date < TIMESTAMPS[i] <= to_date) :
             top_n.append(i)
 
         if len(top_n) == (start + n) :
@@ -236,6 +246,8 @@ def get_top_articles_linrel(e, start, count, exploration) :
                                                         data,
                                                         start,
                                                         count,
+                                                        e.from_date,
+                                                        e.to_date,
                                                         exploration_rate=exploration)
 
     articles_new_dbid = [ i + 1 for i in articles_new_npid ] # database is 1-indexed, numpy is 0-indexed
@@ -347,16 +359,20 @@ def textual_query(request) :
         # article-count : number of articles to return
         num_articles = int(request.GET.get('article-count', DEFAULT_NUM_ARTICLES))
 
+        from_year = datetime.date(request.GET.get('from_year', 1900),  1,  1)
+        to_year   = datetime.date(request.GET.get('to_year',   2100), 12, 31)
+
         print "article-count: %d" % (num_articles)
 
         # create new experiment
         e = get_experiment(user)
         e.query = query_string
         e.number_of_documents = num_articles
-        #e.query = query_string
+        e.from_date = from_year
+        e.to_date = to_year
 
         # get documents with okapi bm25-based ranking
-        articles = get_top_articles_bm25(query_terms, num_articles)
+        articles = get_top_articles_bm25(query_terms, num_articles, from_year, to_year)
 
         # add random articles if we don't have enough
         fill_count = num_articles - len(articles)
