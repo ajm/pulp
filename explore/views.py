@@ -358,7 +358,12 @@ def textual_query(request) :
 
         # article-count : number of articles to return
         num_articles = int(request.GET.get('article-count', DEFAULT_NUM_ARTICLES))
+        num_topic_articles = int(request.GET.get('topic-count', 100))
 
+        if num_topic_articles < num_articles :
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        # from_year and to_year to run the query over
         from_year = datetime.date(request.GET.get('from_year', 1900),  1,  1)
         to_year   = datetime.date(request.GET.get('to_year',   2100), 12, 31)
 
@@ -372,7 +377,9 @@ def textual_query(request) :
         e.to_date = to_year
 
         # get documents with okapi bm25-based ranking
-        articles = get_top_articles_bm25(query_terms, num_articles, from_year, to_year)
+        #articles = get_top_articles_bm25(query_terms, num_articles, from_year, to_year)
+        topic_articles = get_top_articles_bm25(query_terms, num_topic_articles, from_year, to_year)
+        articles = topic_articles[:num_articles]
 
         # add random articles if we don't have enough
         fill_count = num_articles - len(articles)
@@ -387,7 +394,8 @@ def textual_query(request) :
         e.save()
 
         serializer = ArticleSerializer(articles, many=True)
-        return Response(serializer.data)
+        return Response({ 'articles' : serializer.data,
+                          'topics'   : get_topics(topic_articles)})
 
 def store_feedback(e, post) :
     ei = get_last_iteration(e)
@@ -440,6 +448,12 @@ def selection_query(request) :
         except Exception :
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
+
+        num_topic_articles = int(request.GET.get('topic-count', 100))
+
+        if num_topic_articles < e.number_of_documents :
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
 #        # get previous experiment iteration
 #        try :
 #            ei = get_last_iteration(e)
@@ -477,7 +491,12 @@ def selection_query(request) :
         # get documents with ML algorithm
         # remember to exclude all the articles that the user has already been shown
 #        all_articles = get_unseen_articles(e)
-        rand_articles, keywords, article_stats, stems = get_top_articles_linrel(e, 0, e.number_of_documents, e.exploration_rate)
+        
+        
+        #rand_articles, keywords, article_stats, stems = get_top_articles_linrel(e, 0, e.number_of_documents, e.exploration_rate)
+        topic_articles, keywords, article_stats, stems = get_top_articles_linrel(e, 0, num_topic_articles, e.exploration_rate)
+        rand_articles = topic_articles[:e.number_of_documents]
+
 
         print "%d articles (%s)" % (len(rand_articles), ','.join([str(a.id) for a in rand_articles]))
 
@@ -497,7 +516,9 @@ def selection_query(request) :
 
         print time.time() - start_time
 
-        return Response({'articles' : article_data, 'keywords' : keywords})
+        return Response({'articles' : article_data, 
+                         'keywords' : keywords, 
+                         'topics'   : get_topics(topic_articles)})
 
 @api_view(['GET'])
 def system_state(request) :
@@ -644,7 +665,7 @@ def experiment_ratings(request):
 
     return Response(status=status.HTTP_200_OK)
 
-def get_topics(articles, normalise) :
+def get_topics(articles, normalise=True) :
     result = []
 
     for a in articles :
