@@ -333,7 +333,7 @@ def textual_query(request) :
 
         # get parameters from url
         # q : query string
-        if 'q' not in request.GET or 'participant_id' not in request.GET :
+        if 'q' not in request.GET : # or 'participant_id' not in request.GET :
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         query_string = request.GET['q']
@@ -346,9 +346,12 @@ def textual_query(request) :
         if not len(query_terms) :
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
+        if 'participant_id' in request.GET :
+            participant_id = request.GET['participant_id']
+        else :
+            request.session.flush()
+            participant_id = request.session.session_key
 
-        # participant_id : user id
-        participant_id = request.GET['participant_id']
         try :
             user = User.objects.get(username=participant_id)
 
