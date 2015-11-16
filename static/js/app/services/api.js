@@ -1,4 +1,4 @@
-SearchApp.service('Api', function($http){
+SearchApp.service('Api', function($http, QueryService){
   function parseIterationData(options){
     return {
       selected: _.chain(options.results).where({ bookmarked: true }).map(function(bookmark){ return bookmark.id }).value(),
@@ -19,7 +19,9 @@ SearchApp.service('Api', function($http){
   }
 
   this.search = function(options){
-    return $http.get('/query', { params: { 'q': options.keyword, 'article-count': options.count, 'participant_id': options.participant_id } });
+    var year_range = QueryService.getYearRange();
+
+    return $http.get('/query', { params: { 'q': options.keyword, 'article-count': options.count, 'participant_id': options.participant_id, 'year_from': year_range.from, 'year_to': year_range.to } });
   }
 
   this.setup = function(options){
@@ -32,23 +34,7 @@ SearchApp.service('Api', function($http){
   }
 
   this.topics = function(options){
-
     return $http.get('/topics', { params: options });
-
-    /*return {
-      then: function(callback){
-        var temp_topics = ['Java', 'Programming', 'Algorithms', 'Distributed systems', 'Python', 'Big data', 'Software development'];
-        var topics = [];
-
-        _.times(100, function(){
-  				topics.push({
-  					topics: _(temp_topics).shuffle().take(3).map(function(topic){ return { label: topic, weight: Math.random() } }).value()
-  				});
-  			});
-
-        callback(topics);
-      }
-    }*/
   }
 
   this.ratings = function(data){

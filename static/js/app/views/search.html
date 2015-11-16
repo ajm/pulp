@@ -47,7 +47,7 @@
 
     <div class="header-container" style="padding-left: 25px; padding-right: 25px;">
       <button type="button" class="close pull-left" ng-click="end()"><i class="fa fa-times"></i></button>
-      <h1>{{search_heading}} <small>search results</small></h1>
+      <h1>{{search_heading | ellipsis: 50}} <small>search results</small></h1>
 
       <div class="pull-right" id="header-button-wrapper">
           <!--<button id="explain-search-results-trigger" data-toggle="modal" data-target="#explain-search-results-modal" class="btn btn-blue btn-rounded" ng-show="iteration > 1"><i class="fa fa-question-circle marg-right"></i>Explain these results</button>-->
@@ -141,7 +141,7 @@
             </ul>
           </div>
 
-          <div id="topics-container" topics-diagram ng-model="visualization_data" ng-hide="iteration == 1 || !visualization_data">
+          <div id="topics-container" topics-diagram ng-model="visualization_data" ng-hide="!visualization_data">
             <div id="current-iteration-indicator">
               <div id="iteration-label">Current iteration</div>
             </div>
