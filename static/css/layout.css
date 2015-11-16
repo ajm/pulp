@@ -88,7 +88,6 @@ body.body-coordinates{
 	z-index: 3;
 	display: none;
 	color: white;
-	max-width: 250px;
 	padding: 4px 8px;
 	border-radius: 3px;
 	background-color: rgba(0,0,0,.8);

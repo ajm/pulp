@@ -1,23 +1,6 @@
-SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$location", "$interval", "Api", "Classifier", function($scope, $rootScope, $sce, $location, $interval, Api, Classifier){
+SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$location", "$interval", "Api", "Classifier", "QueryService", function($scope, $rootScope, $sce, $location, $interval, Api, Classifier, QueryService){
 
-	$scope.seconds_left = 0;
 	$scope.topics_pointer = 0;
-	var query_timer = null;
-
-	if(!$rootScope.settings || !$rootScope.settings.participant_id){
-		$location.path('/settings');
-	}else if($rootScope.settings.query_time){
-		/*$scope.seconds_left = parseInt($scope.settings.query_time) * 60;
-
-		query_timer = $interval(function(){
-				$scope.seconds_left--;
-
-				if($scope.seconds_left <= 0){
-					$scope.end();
-				}
-		}, 1000)*/
-	}
-
 	$scope.chosen_highlight_color_index = 0;
 	$scope.result_count = 20;
 	$scope.bookmark_history = [];
@@ -26,21 +9,22 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 	$scope.selected_highlight_color = UI.highlight_colors[0];
   $scope.iteration = 1;
 
-  var first_iteration_started = null;
+	var first_iteration_started = null;
 	var keywords = {};
 
-	// SCOPE FUNCTIONS
 	$scope.search = function(){
 		reset_variables();
 
     $scope.searching = true;
     $scope.loading = true;
 
-    Api.search({ keyword: $scope.search_keyword, count: parseInt($scope.result_count), participant_id: $rootScope.settings.participant_id })
+    Api.search({ keyword: $scope.search_keyword, count: parseInt($scope.result_count) })
 		.success(function(response){
-      $scope.results = response;
+      $scope.results = response.articles;
+			$scope.visualization_data = { topics: response.topics, append: false };
       $scope.search_heading = $scope.search_keyword;
-      $scope.loading = false;
+
+			$scope.loading = false;
 
       init_results();
 
@@ -131,6 +115,8 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 
     Api.next(options).success(function(response){
       $scope.results = response.articles;
+			$scope.visualization_data = { topics: response.topics, append: false };
+			$scope.loading = false;
 
       keywords = response.keywords;
       init_results();
@@ -142,12 +128,6 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
       if($scope.highlight_keywords){
         highlight();
       }
-
-			Api.topics({ from: 0, to: 100, participant_id: $rootScope.settings.participant_id, normalise: 0 })
-				.then(function(topics){
-					$scope.visualization_data = { topics: topics.data, append: false };
-					$scope.loading = false;
-				});
     })
     .error(function(){
       $scope.results = [];
@@ -186,13 +166,15 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 		//$interval.cancel(query_timer);
 
 		Api.end(options).success(function(){
-			$rootScope.experiment_data.articles = _.uniq($rootScope.experiment_data.articles, function(article){
+			/*$rootScope.experiment_data.articles = _.uniq($rootScope.experiment_data.articles, function(article){
 				return article.id;
 			});
 
 			alert('The query has ended!');
 
-			$location.path('/ratings');
+			$location.path('/ratings');*/
+
+			$location.path('/settings');
 		});
 	}
 
@@ -231,7 +213,6 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 		result.show_plain_abstract = !result.show_plain_abstract;
 	}
 
-	// PRIVATE FUNCTIONS
 	var un_highlight = function(){
 		$scope.results.forEach(function(result){
 			result.abstract = $sce.trustAsHtml(UI.un_highlight(result.abstract));
@@ -302,8 +283,9 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 		highlight();
 	});
 
-	if($rootScope.settings.search_query){
-		$scope.search_keyword = $rootScope.settings.search_query;
-		$scope.search();
-	}
+	QueryService.setYearRange({ from: $location.search().year_from || 1993, to: $location.search().year_to || 2015 })
+	QueryService.setQuery($location.search().query || '');
+
+	$scope.search_keyword = QueryService.getQuery();
+	$scope.search();
 }]);

@@ -56,6 +56,16 @@ SearchApp.filter('html', function($sce){
   }
 });
 
+SearchApp.filter('ellipsis', function(){
+	return function(text, size){
+		if(String(text).length < size){
+			return text;
+		}else{
+			return String(text).substring(0, size) + '...';
+		}
+	}
+});
+
 SearchApp.filter("synopsis", function(){
 	return function(text){
 		return ( String(text).length > 300 ? String(text).substring(0,300) + "..." : String(text) );

@@ -88,22 +88,57 @@ SearchApp.directive('topicsDiagram', function(){
   }
 
   var init_diagram = function(raphael, data, options){
-    var all_topics =
-      _.chain(data)
-        .reduce(function(all, article){ return all.concat(article.topics) }, [])
-        .uniq(function(topic){
-          return topic.label;
-        })
-        .map(function(topic){
-          if(!topics_to_color[topic.label]){
-            topics_to_color[topic.label] = generate_color();
-          }
+    var all_topics = _.chain(data)
+      .reduce(function(all, article){ return all.concat(article.topics) }, [])
+      .uniq(function(topic){
+        return topic.label;
+      })
+      .map(function(topic){
+        if(!topics_to_color[topic.label]){
+          topics_to_color[topic.label] = generate_color();
+        }
 
-          return topic.label;
-        })
-        .value();
+        return topic.label;
+      })
+      .value();
 
-    all_topics.forEach(function(topic){
+    var previousTopics = null;
+    var bar_y = y_pointer;
+
+    data.forEach(function(article){
+
+      /*article.topics.sort(function(a, b){
+        if(!previousTopics){
+          return b.weight - a.weight;
+        }else{
+          return (1/previousTopics.indexOf(b.label))-(1/previousTopics.indexOf(a.label));
+        }
+      });*/
+
+      article.topics.sort(function(a, b){
+        return all_topics.indexOf(a.label) - all_topics.indexOf(b.label);
+      });
+
+      previousTopics = _.map(article.topics, function(t){ return t.label });
+
+      var weight_sum = _.sum(article.topics, 'weight');
+      var bar_x = 0;
+
+      article.topics.forEach(function(topic){
+        var topic_weight = topic.weight;
+        var bar_width = ( topic_weight / weight_sum ) * CANVAS_WIDTH;
+
+        console.log(bar_width);
+
+        create_bar(raphael, { label: topic.label }, { color: topics_to_color[topic.label], width: bar_width, height: BAR_HEIGHT, x: bar_x, y: bar_y });
+
+        bar_x += bar_width;
+      });
+
+      bar_y += BAR_HEIGHT ;
+    });
+
+    /*all_topics.forEach(function(topic){
       console.log(topic)
       var bar_y = y_pointer;
 
@@ -125,7 +160,7 @@ SearchApp.directive('topicsDiagram', function(){
         bar_y += BAR_HEIGHT;
       });
 
-    });
+    });*/
 
     y_pointer += BAR_HEIGHT * data.length;
   }
