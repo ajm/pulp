@@ -108,7 +108,7 @@ def get_top_articles_bm25(query_terms, n, from_date, to_date) :
 
     # ver.1
     #return [ articles[r[0]] for r in ranking[:n] ]
-    
+
     # ver.2
     #id2article = dict([ (a.id, a) for a in Article.objects.filter(pk__in=[ r[0]+1 for r in ranking[:n] ]) ])
     #top_articles = [ id2article[i[0]+1] for i in ranking[:n] ]
@@ -494,8 +494,8 @@ def selection_query(request) :
         # get documents with ML algorithm
         # remember to exclude all the articles that the user has already been shown
 #        all_articles = get_unseen_articles(e)
-        
-        
+
+
         #rand_articles, keywords, article_stats, stems = get_top_articles_linrel(e, 0, e.number_of_documents, e.exploration_rate)
         topic_articles, keywords, article_stats, stems = get_top_articles_linrel(e, 0, num_topic_articles, e.exploration_rate)
         rand_articles = topic_articles[:e.number_of_documents]
@@ -519,8 +519,8 @@ def selection_query(request) :
 
         print time.time() - start_time
 
-        return Response({'articles' : article_data, 
-                         'keywords' : keywords, 
+        return Response({'articles' : article_data,
+                         'keywords' : keywords,
                          'topics'   : get_topics(topic_articles)})
 
 @api_view(['GET'])
@@ -541,7 +541,7 @@ def system_state(request) :
         print "start = %d, count = %d" % (start, count)
 
         articles, keyword_stats, article_stats, stems = get_top_articles_linrel(e, start, count, e.exploration_rate)
-        serializer = ArticleSerializer(articles, many=True)    
+        serializer = ArticleSerializer(articles, many=True)
 
         for i in serializer.data :
             i['stemming'] = stems[i['id']]
@@ -732,4 +732,3 @@ def topics(request) :
                                                                      e.exploration_rate)
 
     return Response(get_topics(articles, normalise))
-
