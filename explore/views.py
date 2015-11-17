@@ -356,8 +356,10 @@ def textual_query(request) :
             user = User.objects.get(username=participant_id)
 
         except User.DoesNotExist :
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-
+            user = User()
+            user.username = participant_id
+            user.save()
+            #return Response(status=status.HTTP_400_BAD_REQUEST)
 
         # article-count : number of articles to return
         num_articles = int(request.GET.get('article-count', DEFAULT_NUM_ARTICLES))
