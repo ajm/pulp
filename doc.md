@@ -17,6 +17,10 @@ All the stylesheets are located in the `static/css` folder.
 
 All the templates are located in the `templates` folder.
 
+### Switching to settings page
+
+Set the search query from the settings controller by calling `QueryService.setQuery` function in the `settings_controller.js` file and remove `QueryService.setQuery` function call from the `search_controller.js` file.
+
 ## Building
 
 1. Install [Node.js](https://nodejs.org/en/).
