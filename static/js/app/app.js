@@ -19,6 +19,10 @@ SearchApp.config(function($routeProvider){
 		controller: 'SettingsController',
 		templateUrl: 'static/js/app/views/settings.html'
 	})
+	.when('/topic', {
+		controller: 'TopicController',
+		templateUrl: 'static/js/app/views/topic.html'
+	})
 	.when('/ratings', {
 		controller: 'RatingsController',
 		templateUrl: 'static/js/app/views/ratings.html'

@@ -18,7 +18,7 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
     $scope.searching = true;
     $scope.loading = true;
 
-    Api.search({ keyword: $scope.search_keyword, count: parseInt($scope.result_count) })
+    Api.search({ keyword: $scope.search_keyword, count: parseInt($scope.result_count), participant_id: $rootScope.settings.participant_id })
 		.success(function(response){
       $scope.results = response.articles;
 			$scope.visualization_data = { topics: response.topics, append: false };
@@ -287,5 +287,8 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 	QueryService.setQuery($location.search().query || '');
 
 	$scope.search_keyword = QueryService.getQuery();
-	$scope.search();
+
+	if($scope.search_keyword){
+		$scope.search();
+	}
 }]);

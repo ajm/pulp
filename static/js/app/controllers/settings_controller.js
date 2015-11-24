@@ -3,6 +3,7 @@ SearchApp.controller('SettingsController', function($scope, $rootScope, $locatio
   $rootScope.settings.search_query = $location.search().query || '';
 
   QueryService.setYearRange({ from: $location.search().year_from, to: $location.search().year_to });
+  //QueryService.setQuery($location.search().query || '');
 
   $scope.setup = function(){
     Api.setup({
