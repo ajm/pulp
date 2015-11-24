@@ -376,6 +376,16 @@ def textual_query(request) :
 
         # create new experiment
         e = get_experiment(user)
+
+        if not e :
+            e = Experiment()
+            e.user                  = user
+            e.task_type             = Experiment.EXPLORATORY
+            e.study_type            = 1 # full system
+            e.base_exploration_rate = 1.0
+            e.number_of_documents   = DEFAULT_NUM_ARTICLES
+            e.save()
+
         e.query = query_string
         e.number_of_documents = num_articles
         e.from_date = from_year
