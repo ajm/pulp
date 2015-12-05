@@ -75,14 +75,35 @@ def logout_view(request):
 print "caching timestamps..."
 TIMESTAMPS = dict([ (a.id - 1, a.date) for a in Article.objects.all() ]) # -1 because numpy is zero indexed
 
+def get_articles(method, experiment, start_index, num_articles) :
+
+    if method in ('bm25', 'okapibm25') :
+        return get_articles_bm25(experiment, start_index, num_articles)
+
+    elif method in ('linrel',) :
+        return get_articles_linrel(experiment, start_index, num_articles)
+
+    elif method in ('linrel_positive',) :
+        return get_articles_linrel_positive(experiment, start_index, num_articles)
+
+    else :
+        assert False, "unknown algorithm requested (%s)" % (method)
+
 # query terms - a list of stemmed query words
 # n - the number of articles to return
 #@timecall(immediate=True)
-def get_top_articles_bm25(query_terms, n, from_date, to_date, e) :
+def get_articles_bm25(exp, start_index, num_articles) : #query_terms, n, from_date, to_date, e) :
     bm25 = load_sparse_bm25()
     features = load_features_bm25()
 
-    print "get_top_articles_bm25()"
+    stemmer = SnowballStemmer('english')
+    query_terms = [ stemmer.stem(term) for term in exp.query.lower().split() ]
+
+    if not len(query_terms) :
+        raise PulpException("query string (\"%s\") contains no query terms" % (exp.query))
+    
+    from_date = exp.from_date
+    to_date = exp.to_date
 
     tmp = {}
 
@@ -101,12 +122,12 @@ def get_top_articles_bm25(query_terms, n, from_date, to_date, e) :
 
     ranking = sorted(tmp.items(), key=lambda x : x[1], reverse=True)
 
-    print "len(ranking) =", len(ranking)
-
     # to support positive feedback only linrel, okapiBM25 might be
     # called after the first iteration
-    articles_obj = ArticleFeedback.objects.filter(experiment=e).exclude(selected=None)
+    articles_obj = ArticleFeedback.objects.filter(experiment=exp).exclude(selected=None)
     articles = [ a.article.id - 1 for a in articles_obj ]
+
+    print articles
 
     # ver.3
     # find top n articles in date range
@@ -115,8 +136,10 @@ def get_top_articles_bm25(query_terms, n, from_date, to_date, e) :
         if (i[0] not in articles) and (from_date < TIMESTAMPS[i[0]] <= to_date) :
             top_ids.append(i[0] + 1) # +1 because db is one indexed
 
-            if len(top_ids) == n :
+            if len(top_ids) == (start_index + num_articles) :
                 break
+
+    top_ids = top_ids[-num_articles:]
 
     # ver.1
     #return [ articles[r[0]] for r in ranking[:n] ]
@@ -195,7 +218,7 @@ def linrel_positive_feedback_only(articles, feedback, data, start, n, from_date,
     print positive_articles
 
     if len(positive_articles) < 2 :
-        raise PulpException("need feedback on 2 or more articles for linrel to work with only positive feedback, %d provided" % (len(feedback)))
+        raise PulpException("need feedback on 2 or more articles for linrel to work with only positive feedback, %d provided" % (len(positive_articles)))
 
     #X_t = X[ numpy.array(articles) ]
     X_t = X[ numpy.array(positive_articles) ]
@@ -409,22 +432,13 @@ def textual_query(request) :
 
         query_string = request.GET['q']
 
-        stemmer = SnowballStemmer('english')
-        query_terms = [ stemmer.stem(term) for term in query_string.lower().split() ]
-
-        print "query: %s" % str(query_terms)
-
-        if not len(query_terms) :
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-
-        if ('participant_id' in request.GET) and request.GET['participant_id']:
+        if ('participant_id' in request.GET) and request.GET['participant_id'] :
             participant_id = request.GET['participant_id']
         else :
             request.session.flush()
             participant_id = request.session.session_key
-            print "using session_key as participant_id"
-        
-        print "ID =", participant_id
+            
+        print "participant =", participant_id
 
         try :
             user = User.objects.get(username=participant_id)
@@ -465,9 +479,14 @@ def textual_query(request) :
         e.from_date = from_year
         e.to_date = to_year
 
-        # get documents with okapi bm25-based ranking
-        #articles = get_top_articles_bm25(query_terms, num_articles, from_year, to_year)
-        topic_articles = get_top_articles_bm25(query_terms, num_topic_articles, from_year, to_year, e)
+        try :
+            # get documents with okapi bm25-based ranking
+            topic_articles = get_articles("bm25", e, 0, num_topic_articles)
+        
+        except PulpException, pe :
+            print "ERROR", str(pe)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        
         articles = topic_articles[:num_articles]
 
         # add random articles if we don't have enough
@@ -493,7 +512,8 @@ def store_feedback(e, post) :
 
     if ei.iteration == 0 :
         print "exploratory = '%s'" % post.get('exploratory', 0)
-        e.classifier = int(post.get('exploratory', 0)) == 1
+        #e.classifier = int(post.get('exploratory', 0)) == 1
+        e.classifier = True
 
         if e.classifier and e.study_type == 1 :
             print "USING EXPLORATION (classifier = %s, study_type = %s)" % (str(e.classifier), 'full' if e.study_type == 1 else 'baseline')
@@ -515,16 +535,14 @@ def selection_query(request) :
         print json.dumps(post, sort_keys=True, indent=4, separators=(',', ': '))
 
         start_time = time.time()
-        # we need participant_id to be set
-        if 'participant_id' not in post :
-            return Response(status=status.HTTP_400_BAD_REQUEST)
 
         # get user object
-        participant_id = post['participant_id']
-
-        if not participant_id :
+        if ('participant_id' in post) and post['participant_id'] :
+            participant_id = post['participant_id']
+        else :
             participant_id = request.session.session_key
-            print "using session_key as participant_id"
+                    
+        print "participant =", participant_id
 
         try :
             user = User.objects.get(username=participant_id)
@@ -581,10 +599,6 @@ def selection_query(request) :
 #        # add selected documents to previous experiment iteration
 #        add_feedback(ei, selected_documents, post['clicked'], post['seen'])
 
-        # get documents with ML algorithm
-        # remember to exclude all the articles that the user has already been shown
-#        all_articles = get_unseen_articles(e)
-
 
         # ver.1
         #rand_articles, keywords, article_stats, stems = get_top_articles_linrel(e, 0, e.number_of_documents, e.exploration_rate)
@@ -605,13 +619,14 @@ def selection_query(request) :
             # articles to run linrel with only positive feedback, fall back to
             # okapiBM25 ranking
 
-            stemmer = SnowballStemmer('english')
-            query_terms = [ stemmer.stem(term) for term in e.query.lower().split() ]
-
-            topic_articles = get_top_articles_bm25(query_terms, num_topic_articles, e.from_date, e.to_date, e)
+            topic_articles = get_articles("bm25", e, 0, num_topic_articles)
             print "bm25 returned %d" % len(topic_articles)
 
             rand_articles = topic_articles[:e.number_of_documents]
+
+            create_iteration(e, rand_articles)
+            e.number_of_iterations += 1
+            e.save()
 
             serializer = ArticleSerializer(rand_articles, many=True)
 
@@ -815,6 +830,7 @@ def get_topics(articles, normalise=True) :
 @api_view(['GET'])
 def topics(request) :
     #/topics?from=0&to=100&participant_id=1
+    print json.dumps(request.GET, sort_keys=True, indent=4, separators=(',', ': '))
 
     try :
         from_article = int(request.GET['from'])
@@ -845,10 +861,7 @@ def topics(request) :
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
     if e.number_of_iterations == 1 :
-        stemmer = SnowballStemmer('english')
-        query_terms = [ stemmer.stem(term) for term in e.query.lower().split() ]
-        articles = get_top_articles_bm25(query_terms, to_article, e.from_date, e.to_date, e)
-        articles = articles[from_article:]
+        articles = get_articles("bm25", e, from_article, to_article - from_article) 
         return Response(get_topics(articles, normalise))
 
 

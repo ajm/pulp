@@ -1,0 +1,8 @@
+Django==1.7.4
+djangorestframework==3.0.5
+nltk==3.0.1
+numpy==1.9.2
+pyenchant==1.6.6
+scikit-learn==0.15.2
+scipy==0.15.1
+
