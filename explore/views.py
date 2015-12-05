@@ -822,6 +822,9 @@ def topics(request) :
         normalise = int(request.GET.get('normalise', 1))
         participant_id = request.GET['participant_id']
 
+        if not participant_id :
+            participant_id = request.session.session_key
+
     except :
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -842,7 +845,10 @@ def topics(request) :
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
     if e.number_of_iterations == 1 :
-        articles = get_top_articles_bm25(e.query, to_article)[from_article:]
+        stemmer = SnowballStemmer('english')
+        query_terms = [ stemmer.stem(term) for term in e.query.lower().split() ]
+        articles = get_top_articles_bm25(query_terms, to_article, e.from_date, e.to_date, e)
+        articles = articles[from_article:]
         return Response(get_topics(articles, normalise))
 
 
@@ -852,3 +858,4 @@ def topics(request) :
                                                                      e.exploration_rate)
 
     return Response(get_topics(articles, normalise))
+
