@@ -49,6 +49,9 @@ DEFAULT_NUM_ARTICLES = 10
 #    queryset = User.objects.all()
 #    serializer_class = UserSerializer
 
+class PulpException(Exception) :
+    pass
+
 class GetArticle(generics.RetrieveAPIView) :
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
@@ -75,9 +78,11 @@ TIMESTAMPS = dict([ (a.id - 1, a.date) for a in Article.objects.all() ]) # -1 be
 # query terms - a list of stemmed query words
 # n - the number of articles to return
 #@timecall(immediate=True)
-def get_top_articles_bm25(query_terms, n, from_date, to_date) :
+def get_top_articles_bm25(query_terms, n, from_date, to_date, e) :
     bm25 = load_sparse_bm25()
     features = load_features_bm25()
+
+    print "get_top_articles_bm25()"
 
     tmp = {}
 
@@ -96,11 +101,18 @@ def get_top_articles_bm25(query_terms, n, from_date, to_date) :
 
     ranking = sorted(tmp.items(), key=lambda x : x[1], reverse=True)
 
+    print "len(ranking) =", len(ranking)
+
+    # to support positive feedback only linrel, okapiBM25 might be
+    # called after the first iteration
+    articles_obj = ArticleFeedback.objects.filter(experiment=e).exclude(selected=None)
+    articles = [ a.article.id - 1 for a in articles_obj ]
+
     # ver.3
     # find top n articles in date range
     top_ids = []
     for i in ranking :
-        if from_date < TIMESTAMPS[i[0]] <= to_date :
+        if (i[0] not in articles) and (from_date < TIMESTAMPS[i[0]] <= to_date) :
             top_ids.append(i[0] + 1) # +1 because db is one indexed
 
             if len(top_ids) == n :
@@ -145,6 +157,63 @@ def linrel(articles, feedback, data, start, n, from_date, to_date, mew=1.0, expl
 
     # W * Y_t is the keyword weights
     K = W * Y_t
+
+    mean = A * Y_t
+    variance = (exploration_rate / 2.0) * normL2
+    I_t = mean + variance
+
+
+    linrel_ordered = numpy.argsort(I_t.transpose()[0]).tolist()[0]
+    top_n = []
+
+    for i in linrel_ordered[::-1] :
+        #if i not in articles :
+        if (i not in articles) and (from_date < TIMESTAMPS[i] <= to_date) :
+            top_n.append(i)
+
+        if len(top_n) == (start + n) :
+            break
+
+    top_n = top_n[-n:]
+
+    return top_n, \
+           mean[ numpy.array(top_n) ].transpose().tolist()[0], \
+           variance[ numpy.array(top_n) ].transpose().tolist()[0], \
+           K
+
+def linrel_positive_feedback_only(articles, feedback, data, start, n, from_date, to_date, mew=1.0, exploration_rate=1.0) :
+    assert len(articles) == len(feedback), "articles and feedback are not the same length"
+
+    X = data
+
+    num_articles = X.shape[0]
+    num_features = X.shape[1]
+
+    positive_articles = [ articles[i] for i,fb in enumerate(feedback) if fb == 1 ]
+
+    print feedback
+    print positive_articles
+
+    if len(positive_articles) < 2 :
+        raise PulpException("need feedback on 2 or more articles for linrel to work with only positive feedback, %d provided" % (len(feedback)))
+
+    #X_t = X[ numpy.array(articles) ]
+    X_t = X[ numpy.array(positive_articles) ]
+    X_tt = X_t.transpose()
+
+    I = mew * scipy.sparse.identity(num_features, format='dia')
+
+    W = spsolve((X_tt * X_t) + I, X_tt)
+    A = X * W
+
+    #Y_t = numpy.matrix(feedback).transpose()
+    Y_t = numpy.matrix([1] * int(sum(feedback))).transpose()
+
+    tmpA = numpy.array(A.todense())
+    normL2 = numpy.matrix(numpy.sqrt(numpy.sum(tmpA * tmpA, axis=1))).transpose()
+
+    # W * Y_t is the keyword weights
+    K = W * Y_t 
 
     mean = A * Y_t
     variance = (exploration_rate / 2.0) * normL2
@@ -241,7 +310,8 @@ def get_top_articles_linrel(e, start, count, exploration) :
     feedback = [ 1.0 if a.selected else 0.0 for a in articles_obj ]
     data = X
 
-    articles_new_npid,mean,variance,kw_weights = linrel(articles_npid,
+    articles_new_npid,mean,variance,kw_weights = linrel_positive_feedback_only( #linrel(
+                                                        articles_npid,
                                                         feedback,
                                                         data,
                                                         start,
@@ -330,6 +400,7 @@ def textual_query(request) :
         # and experiments are tagged with the session id
 #        request.session.flush()
         #print request.session.session_key
+        print json.dumps(request.GET, sort_keys=True, indent=4, separators=(',', ': '))
 
         # get parameters from url
         # q : query string
@@ -346,11 +417,14 @@ def textual_query(request) :
         if not len(query_terms) :
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-        if 'participant_id' in request.GET :
+        if ('participant_id' in request.GET) and request.GET['participant_id']:
             participant_id = request.GET['participant_id']
         else :
             request.session.flush()
             participant_id = request.session.session_key
+            print "using session_key as participant_id"
+        
+        print "ID =", participant_id
 
         try :
             user = User.objects.get(username=participant_id)
@@ -393,7 +467,7 @@ def textual_query(request) :
 
         # get documents with okapi bm25-based ranking
         #articles = get_top_articles_bm25(query_terms, num_articles, from_year, to_year)
-        topic_articles = get_top_articles_bm25(query_terms, num_topic_articles, from_year, to_year)
+        topic_articles = get_top_articles_bm25(query_terms, num_topic_articles, from_year, to_year, e)
         articles = topic_articles[:num_articles]
 
         # add random articles if we don't have enough
@@ -447,6 +521,10 @@ def selection_query(request) :
 
         # get user object
         participant_id = post['participant_id']
+
+        if not participant_id :
+            participant_id = request.session.session_key
+            print "using session_key as participant_id"
 
         try :
             user = User.objects.get(username=participant_id)
@@ -508,10 +586,40 @@ def selection_query(request) :
 #        all_articles = get_unseen_articles(e)
 
 
+        # ver.1
         #rand_articles, keywords, article_stats, stems = get_top_articles_linrel(e, 0, e.number_of_documents, e.exploration_rate)
-        topic_articles, keywords, article_stats, stems = get_top_articles_linrel(e, 0, num_topic_articles, e.exploration_rate)
-        rand_articles = topic_articles[:e.number_of_documents]
 
+        # ver.2
+        #topic_articles, keywords, article_stats, stems = get_top_articles_linrel(e, 0, num_topic_articles, e.exploration_rate)
+        #rand_articles = topic_articles[:e.number_of_documents]
+
+        # ver.3
+        try :
+            topic_articles, keywords, article_stats, stems = get_top_articles_linrel(e, 0, num_topic_articles, e.exploration_rate)
+            rand_articles = topic_articles[:e.number_of_documents]
+
+        except PulpException, pe :
+            print "ERROR", str(pe)
+
+            # an exception was thrown because we need feedback on at least two
+            # articles to run linrel with only positive feedback, fall back to
+            # okapiBM25 ranking
+
+            stemmer = SnowballStemmer('english')
+            query_terms = [ stemmer.stem(term) for term in e.query.lower().split() ]
+
+            topic_articles = get_top_articles_bm25(query_terms, num_topic_articles, e.from_date, e.to_date, e)
+            print "bm25 returned %d" % len(topic_articles)
+
+            rand_articles = topic_articles[:e.number_of_documents]
+
+            serializer = ArticleSerializer(rand_articles, many=True)
+
+            print "returning %d articles" % len(rand_articles)
+
+            return Response({'articles' : serializer.data,
+                             'keywords' : {},
+                             'topics'   : get_topics(topic_articles)})
 
         print "%d articles (%s)" % (len(rand_articles), ','.join([str(a.id) for a in rand_articles]))
 
