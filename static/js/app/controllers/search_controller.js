@@ -284,7 +284,7 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 	});
 
 	QueryService.setYearRange({ from: $location.search().year_from || 1993, to: $location.search().year_to || 2015 })
-	QueryService.setQuery($location.search().query || '');
+	//QueryService.setQuery($location.search().query || ''); // uncomment to go back to search bar
 
 	$scope.search_keyword = QueryService.getQuery();
 
