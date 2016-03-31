@@ -1,26 +1,20 @@
 
-# make a virtual environment (if necessary)
+
+# install libraries
 virtualenv env
 source ./env/bin/activate
+pip install -r requirements.txt
 
-# install dependancies
-pip install django
-pip install djangorestframework
-pip install nltk # maybe not necessary
-pip install numpy
-pip install scipy
-pip install scikit-learn
-
-# sync and build article database
+# build database
 python manage.py syncdb
-python manage.py topics2db <topics.txt>
+python manage.py topics2db <topics.txt> # not used
 python manage.py xml2db <articles.xml>
 python manage.py mapping2db <article_topics.txt>
 python manage.py okapibm25
 python manage.py linrel
 
-# run testing webserver
+# run test server
 python manage.py runserver
 
-# go to 127.0.0.1:8000
+# go to localhost:8000/search#/settings
 

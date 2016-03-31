@@ -16,6 +16,7 @@
         <input type="text" class="form-control" ng-model="settings.participant_id" required placeholder="Participant ID" autofocus>
       </div>
 
+<!--
       <div class="form-group">
         <label>Task type</label>
         <div class="radio">
@@ -47,6 +48,7 @@
           </label>
         </div>
       </div>
+-->
 
       <div class="form-group">
         <label>Exploration rate</label>
@@ -59,10 +61,20 @@
       </div>
 
       <div class="form-group">
-        <label>Query time (minutes)</label>
-        <input type="text" placeholder="Query time" class="form-control" required ng-model="settings.query_time">
+        <label>Number of articles per iteration</label>
+        <input type="text" placeholder="Number of articles" class="form-control" required ng-model="settings.article_count">
       </div>
 
+      <div class="form-group">
+        <label>Session duration (iterations)</label>
+        <input type="text" placeholder="Session duration" class="form-control" required ng-model="settings.query_iterations">
+      </div>
+<!--
+      <div class="form-group">
+        <label>Time limit (minutes)</label>
+        <input type="text" placeholder="Query time" class="form-control" required ng-model="settings.query_time">
+      </div>
+-->
       <button type="submit" class="btn btn-blue btn-rounded">Save</button>
     </form>
   </div>

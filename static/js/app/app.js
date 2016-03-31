@@ -35,10 +35,12 @@ SearchApp.config(function($routeProvider){
 SearchApp.run(function($rootScope){
 	$rootScope.settings = {
 		participant_id: '',
-		task_type: 0,
-		exploration_rate: 0,
+		//task_type: 0,
+		exploration_rate: 0.0,
 		query_time: 15,
-		study_type: 1
+        query_iterations: 3,
+        article_count: 20
+		//study_type: 1
 	};
 
 	$rootScope.experiment_data = {

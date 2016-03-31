@@ -109,6 +109,11 @@
                             <strong><i class="fa fa-book text-muted marg-right"></i>Venue: </strong>
                             <span class="article-venue">{{result.venue}}</span>
                             </li>
+
+                            <li>
+                            <strong><i class="fa fa-calendar text-muted marg-right"></i>Date: </strong>
+                            <span class="article-venue">{{result.date}}</span>
+                            </li>
                         </ul>
 
                         <div class="article-abstract" ng-hide="result.show_plain_abstract" mathjax-bind="result.abstract"></div>
@@ -141,6 +146,7 @@
             </ul>
           </div>
 
+<!--
           <div id="topics-container" topics-diagram ng-model="visualization_data" ng-hide="!visualization_data">
             <div id="current-iteration-indicator">
               <div id="iteration-label">Current iteration</div>
@@ -154,6 +160,7 @@
               </span>
             </div>
           </div>
+-->
 
           <!--<button id="back-to-top" class="btn btn-grey btn-rounded" ng-click="back_to_top();"><i class="fa fa-angle-up fa-sm marg-right"></i>Back to top</button>-->
         </div>

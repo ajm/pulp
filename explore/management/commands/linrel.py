@@ -29,7 +29,7 @@ class Command(BaseCommand) :
         #v = CountVectorizer(min_df=2, stop_words=get_stop_words(), dtype=np.float64)
         v = TfidfVectorizer(min_df=10, stop_words=get_stop_words(), dtype=np.float64, norm='l2')
 
-        self.stdout.write("Building matrix from %d articles... " % Article.objects.count(), ending='')
+        self.stdout.write("Building matrix from %d articles...\n" % Article.objects.count(), ending='')
         self.stdout.flush()
 
         #m = v.fit_transform(build_corpus())

@@ -92,13 +92,13 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 			results: $scope.results,
 			participant_id: $rootScope.settings.participant_id
 		};
-
+/*
 		if($scope.iteration == 1){
 			options.exploratory = is_exploratory() ? 1 : 0;
 			$rootScope.experiment_data.classifier_value = ( options.exploratory == 1 ? 'exploratory' : 'look up' )
 		}
-
-    UI.back_to_top();
+*/
+        UI.back_to_top();
 
 		$scope.bookmark_history_showing = false;
 
@@ -111,30 +111,35 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 			$scope.bookmark_history.push(history_obj);
 		}
 
-    $scope.loading = true;
+        $scope.loading = true;
 
-    Api.next(options).success(function(response){
-      $scope.results = response.articles;
-			$scope.visualization_data = { topics: response.topics, append: false };
-			$scope.loading = false;
+        if($scope.iteration == $rootScope.max_iterations) {
+            Api.end(options).success(function(){
+                $location.path('/settings');
+            });
+        }
+        else {
+            Api.next(options).success(function(response){
+                $scope.results = response.articles;
+			    $scope.visualization_data = { topics: response.topics, append: false };
+			    $scope.loading = false;
 
-      keywords = response.keywords;
-      init_results();
+                keywords = response.keywords;
+                init_results();
 
-      $scope.iteration++;
+                $scope.iteration++;
 
-      $scope.search_heading = $scope.search_keyword;
+                $scope.search_heading = $scope.search_keyword;
 
-      if($scope.highlight_keywords){
-        highlight();
-      }
-    })
-    .error(function(){
-      $scope.results = [];
-
-      $scope.loading = false;
-    });
-	}
+                if($scope.highlight_keywords){
+                    highlight();
+                }
+            }).error(function(){
+                $scope.results = [];
+                $scope.loading = false;
+            });
+	    }
+    }
 
 	$scope.back_to_top = function(){
 		UI.back_to_top();
@@ -270,9 +275,9 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
     var params = {
       query_time: Math.round(( (new Date).getTime() - first_iteration_started.getTime() ) / 1000),
       reading_time: Math.round(_.sum($scope.results, function(result){ return ( result.reading_time || 0 ) })),
-			clicked_count: _.where($scope.results, { clicked: true }).length,
-			seen_count: _.where($scope.results, { seen: true }).length,
-			query_length: $scope.search_heading.split(' ').length
+      clicked_count: _.where($scope.results, { clicked: true }).length,
+	  seen_count: _.where($scope.results, { seen: true }).length,
+	  query_length: $scope.search_heading.split(' ').length
     };
 
 		return Classifier.is_exploratory(params);
@@ -283,7 +288,7 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 		highlight();
 	});
 
-	QueryService.setYearRange({ from: $location.search().year_from || 1993, to: $location.search().year_to || 2015 })
+	QueryService.setYearRange({ from: $location.search().year_from || 1993, to: $location.search().year_to || 2100 })
 	//QueryService.setQuery($location.search().query || ''); // uncomment to go back to search bar
 
 	$scope.search_keyword = QueryService.getQuery();
