@@ -41,9 +41,11 @@
 
 <div id="search-results" ng-show="searching">
 
+<!--
     <div class="bookmarked-results-container" style="padding: 0px 25px">
       <span class="bookmark-info animated bounceInUp" data-result-id="{{result.id}}" ng-repeat="result in results | filter:bookmarked_results"><button ng-click="toggle_bookmark(result)" data-toggle="tooltip" data-placement="top" title="{{result.title | strip_tags}}" class="btn btn-circle bookmark bookmark-true" ng-class="{ 'bounceInUp': result.bookmarked }"><i class="fa fa-star"></i></button></span>
     </div>
+-->
 
     <div class="header-container" style="padding-left: 25px; padding-right: 25px;">
       <button type="button" class="close pull-left" ng-click="end()"><i class="fa fa-times"></i></button>
