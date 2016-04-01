@@ -38,7 +38,7 @@ SearchApp.run(function($rootScope){
 		//task_type: 0,
 		exploration_rate: 0.0,
 		query_time: 15,
-        query_iterations: 3,
+        query_iterations: 5,
         article_count: 20
 		//study_type: 1
 	};
