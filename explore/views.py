@@ -212,16 +212,16 @@ def linrel_positive_feedback_only(articles, feedback, data, start, n, from_date,
     num_articles = X.shape[0]
     num_features = X.shape[1]
 
-    positive_articles = [ articles[i] for i,fb in enumerate(feedback) if fb == 1 ]
+    #positive_articles = [ articles[i] for i,fb in enumerate(feedback) if fb == 1 ]
 
-    print feedback
-    print positive_articles
+    #print feedback
+    #print positive_articles
 
-    if len(positive_articles) < 2 :
-        raise PulpException("need feedback on 2 or more articles for linrel to work with only positive feedback, %d provided" % (len(positive_articles)))
+    #if len(positive_articles) < 2 :
+    #    raise PulpException("need feedback on 2 or more articles for linrel to work with only positive feedback, %d provided" % (len(positive_articles)))
 
-    #X_t = X[ numpy.array(articles) ]
-    X_t = X[ numpy.array(positive_articles) ]
+    X_t = X[ numpy.array(articles) ]
+    #X_t = X[ numpy.array(positive_articles) ]
     X_tt = X_t.transpose()
 
     I = mew * scipy.sparse.identity(num_features, format='dia')
@@ -229,8 +229,8 @@ def linrel_positive_feedback_only(articles, feedback, data, start, n, from_date,
     W = spsolve((X_tt * X_t) + I, X_tt)
     A = X * W
 
-    #Y_t = numpy.matrix(feedback).transpose()
-    Y_t = numpy.matrix([1] * int(sum(feedback))).transpose()
+    Y_t = numpy.matrix(feedback).transpose()
+    #Y_t = numpy.matrix([1] * int(sum(feedback))).transpose()
 
     tmpA = numpy.array(A.todense())
     normL2 = numpy.matrix(numpy.sqrt(numpy.sum(tmpA * tmpA, axis=1))).transpose()
