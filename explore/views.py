@@ -690,10 +690,12 @@ def end_search(request) :
     if request.method == 'POST' :
         post = json.loads(request.body)
 
-        if 'participant_id' not in post :
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+        if ('participant_id' in post) and post['participant_id'] :
+            participant_id = post['participant_id']
+        else :
+            participant_id = request.session.session_key
 
-        participant_id = post['participant_id']
+        print "participant =", participant_id
 
         try :
             user = User.objects.get(username=participant_id)
@@ -707,7 +709,8 @@ def end_search(request) :
             store_feedback(e, post)
 
         except :
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response(status=status.HTTP_200_OK)
+            #return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
         e.state = Experiment.COMPLETE

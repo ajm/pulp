@@ -174,7 +174,8 @@ SearchApp.controller("SearchController", ["$scope", "$rootScope","$sce", "$locat
 
 			$location.path('/ratings');*/
 
-			$location.path('/settings');
+            //$location.path('/settings');
+            window.location.reload();
 		});
 	}
 
