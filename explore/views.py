@@ -39,6 +39,8 @@ import json
 import time
 import os.path
 import datetime
+import re
+
 
 #from profilehooks import profile, coverage, timecall
 
@@ -89,15 +91,19 @@ def get_articles(method, experiment, start_index, num_articles) :
     else :
         assert False, "unknown algorithm requested (%s)" % (method)
 
+
+badchars_pat = re.compile("[^a-zA-Z\s]")
+
 # query terms - a list of stemmed query words
 # n - the number of articles to return
 #@timecall(immediate=True)
 def get_articles_bm25(exp, start_index, num_articles) : #query_terms, n, from_date, to_date, e) :
     bm25 = load_sparse_bm25()
     features = load_features_bm25()
+    query = badchars_pat.sub(' ', exp.query).lower()
 
     stemmer = SnowballStemmer('english')
-    query_terms = [ stemmer.stem(term) for term in exp.query.lower().split() ]
+    query_terms = [ stemmer.stem(term) for term in query.split() ]
 
     if not len(query_terms) :
         raise PulpException("query string (\"%s\") contains no query terms" % (exp.query))
@@ -333,7 +339,7 @@ def get_top_articles_linrel(e, start, count, exploration) :
     feedback = [ 1.0 if a.selected else 0.0 for a in articles_obj ]
     data = X
 
-    articles_new_npid,mean,variance,kw_weights = linrel_positive_feedback_only( #linrel(
+    articles_new_npid,mean,variance,kw_weights = linrel( #linrel_positive_feedback_only(
                                                         articles_npid,
                                                         feedback,
                                                         data,
