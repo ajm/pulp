@@ -23,7 +23,8 @@ from explore.models import Article
 #        fields = ('url', 'username', 'email', 'groups')
 
 class ArticleSerializer(serializers.ModelSerializer) :
+    date = serializers.DateField(format='%d %b %Y')
     class Meta :
         model = Article
-        fields = ('id', 'title','author','abstract','venue','url')
+        fields = ('id','title','author','abstract','venue','url','date')
 

@@ -1,5 +1,5 @@
 SearchApp.factory('QueryService', function($location){
-  var year_range = { from: 1993, to: 2015 };
+  var year_range = { from: 1993, to: 2100 };
   var query = ''
 
   var service = {
