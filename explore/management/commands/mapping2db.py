@@ -25,7 +25,7 @@ class Command(BaseCommand) :
 
     def handle(self, *args, **options) :
 
-        NUM_TOPICS_TO_STORE = 10
+        NUM_TOPICS_TO_STORE = 5
 
         topic_count = Topic.objects.count()
         if topic_count == 0 :
@@ -37,9 +37,9 @@ class Command(BaseCommand) :
             print >> stderr, "Error, article table must be built first!"
             exit(1)
 
-        if TopicWeight.objects.count() != 0 :
-            print >> stderr, "Deleting %d TopicWeight objects" % TopicWeight.objects.count()
-            TopicWeight.objects.all().delete()
+        if TopicWeights.objects.count() != 0 :
+            print >> stderr, "Deleting %d TopicWeights objects" % TopicWeights.objects.count()
+            TopicWeights.objects.all().delete()
             print >> stderr, "done!"
 
         topics = Topic.objects.all()
@@ -69,23 +69,44 @@ class Command(BaseCommand) :
                         continue
 
                     a = articles[int(data[0])]
+
+                    tw = TopicWeights()
+                    tw.article = a
+
+                    tw.topic1  = topics[int(data[2])]
+                    tw.weight1 = float(data[3])
+
+                    tw.topic2  = topics[int(data[4])]
+                    tw.weight2 = float(data[5])
+
+                    tw.topic3  = topics[int(data[6])]
+                    tw.weight3 = float(data[7])
+
+                    tw.topic4  = topics[int(data[8])]
+                    tw.weight4 = float(data[9])
+
+                    tw.topic5  = topics[int(data[10])]
+                    tw.weight5 = float(data[11])
+
+                    tw.save()
                 
                     #with transaction.atomic() :
-                    for i in range(2, 2 + (2 * NUM_TOPICS_TO_STORE), 2) : #range(2, len(data), 2) :
-                    
-                        tw = TopicWeight()
-
-                        tw.article  = a
-                        tw.topic    = topics[int(data[i])]
-                        tw.weight   = float(data[i+1])
-
-                        tw.save()
+#                    for i in range(2, 2 + (2 * NUM_TOPICS_TO_STORE), 2) : #range(2, len(data), 2) :
+#                    
+#                        tw = TopicWeight()
+#
+#                        tw.article  = a
+#                        tw.topic    = topics[int(data[i])]
+#                        tw.weight   = float(data[i+1])
+#
+#                        tw.save()
 
                     if (linenum % 1000) == 0 :
                         self.stderr.write("saved topic weights for %s articles" % linenum)
 
 
-        expected_weights = NUM_TOPICS_TO_STORE * article_count
-        print >> stderr, "Wrote %d topic weight objects. I was expecting %d (%d articles x %d topics)" \
-                % (TopicWeight.objects.count(), expected_weights, article_count, NUM_TOPICS_TO_STORE)
+#        expected_weights = NUM_TOPICS_TO_STORE * article_count
+        expected_weights = article_count
+        print >> stderr, "Wrote %d topic weight objects. I was expecting %d" \
+                % (TopicWeights.objects.count(), expected_weights)
 

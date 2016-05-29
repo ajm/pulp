@@ -49,6 +49,20 @@ class TopicWeight(models.Model) :
     article  = models.ForeignKey(Article)
     weight   = models.FloatField(default=0.0)
 
+class TopicWeights(models.Model) :
+    article  = models.ForeignKey(Article)
+
+    topic1   = models.ForeignKey(Topic)
+    weight1  = models.FloatField(default=0.0)
+    topic2   = models.ForeignKey(Topic)
+    weight2  = models.FloatField(default=0.0)
+    topic3   = models.ForeignKey(Topic)
+    weight3  = models.FloatField(default=0.0)
+    topic4   = models.ForeignKey(Topic)
+    weight4  = models.FloatField(default=0.0)
+    topic5   = models.ForeignKey(Topic)
+    weight5  = models.FloatField(default=0.0)
+
 class User(models.Model) :
     username = models.CharField(max_length=100, blank=False)
 
