@@ -823,11 +823,11 @@ def get_topics(articles, normalise=True) :
 
         for tw in TopicWeights.objects.filter(article=a) :
             tmp['topics'].extend([
-                { 'label' : tw.topic1.label, 'weight' : tw.weight1 },
-                { 'label' : tw.topic2.label, 'weight' : tw.weight2 },
-                { 'label' : tw.topic3.label, 'weight' : tw.weight3 },
-                { 'label' : tw.topic4.label, 'weight' : tw.weight4 },
-                { 'label' : tw.topic5.label, 'weight' : tw.weight5 } ])
+                { 'label' : tw.topic1, 'weight' : tw.weight1 },
+                { 'label' : tw.topic2, 'weight' : tw.weight2 },
+                { 'label' : tw.topic3, 'weight' : tw.weight3 },
+                { 'label' : tw.topic4, 'weight' : tw.weight4 },
+                { 'label' : tw.topic5, 'weight' : tw.weight5 } ])
 
         if normalise :
             weight_sum = sum([ t['weight'] for t in tmp['topics'] ])

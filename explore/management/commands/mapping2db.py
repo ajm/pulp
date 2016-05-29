@@ -73,19 +73,19 @@ class Command(BaseCommand) :
                     tw = TopicWeights()
                     tw.article = a
 
-                    tw.topic1  = topics[int(data[2])]
+                    tw.topic1  = topics[int(data[2])].label
                     tw.weight1 = float(data[3])
 
-                    tw.topic2  = topics[int(data[4])]
+                    tw.topic2  = topics[int(data[4])].label
                     tw.weight2 = float(data[5])
 
-                    tw.topic3  = topics[int(data[6])]
+                    tw.topic3  = topics[int(data[6])].label
                     tw.weight3 = float(data[7])
 
-                    tw.topic4  = topics[int(data[8])]
+                    tw.topic4  = topics[int(data[8])].label
                     tw.weight4 = float(data[9])
 
-                    tw.topic5  = topics[int(data[10])]
+                    tw.topic5  = topics[int(data[10])].label
                     tw.weight5 = float(data[11])
 
                     tw.save()
