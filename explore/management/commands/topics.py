@@ -17,6 +17,7 @@ import xml.sax
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from explore.models import Topic, Article, TopicWeight
+from explore.utils import *
 from sys import stderr, exit
 import numpy as np
 
@@ -78,8 +79,8 @@ class Command(BaseCommand) :
         self.stdout.write("Writing topics file...", ending='')
         self.stdout.flush()
 
-        save_sparse_topics(topics)
-        save_sparse_weights(weights)
+        save_topics(topics)
+        save_topicweights(weights)
 
         self.stdout.write("done!\n")
 

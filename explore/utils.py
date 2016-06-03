@@ -74,17 +74,17 @@ def save_sparse_tfidf(m) :
 def load_sparse_tfidf() :
     return load_sparse(tfidf_prefix)
 
-def save_sparse_topics(m) :
-    save_sparse(m, topics_prefix)
+def save_topics(m) :
+    numpy.save(topics_prefix + '.npy', m)
 
-def load_sparse_topics() :
-    return load_sparse(topics_prefix)
+def load_topics() :
+    return numpy.load(topics_prefix + '.npy')
 
-def save_sparse_topicweights(m) :
-    save_sparse(m, topicweights_prefix)
+def save_topicweights(m) :
+    numpy.save(topicweights_prefix + '.npy', m)
 
-def load_sparse_topicweights() :
-    return load_sparse(topicweights_prefix)
+def load_topicweights() :
+    return numpy.load(topicweights_prefix + '.npy')
 
 def save_features_tfidf(m) :
     save_features(m, tfidf_features)
