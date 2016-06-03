@@ -16,7 +16,7 @@
 import xml.sax 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
-from explore.models import Topic, Article, TopicWeight
+from explore.models import Topic, Article, TopicWeights
 from sys import stderr, exit
 
 class Command(BaseCommand) :
