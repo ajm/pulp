@@ -50,7 +50,8 @@ class TopicWeight(models.Model) :
     weight   = models.FloatField(default=0.0)
 
 class TopicWeights(models.Model) :
-    article  = models.ForeignKey(Article)
+    #article  = models.ForeignKey(Article)
+    article  = models.PositiveIntegerField() # id of article object
 
     topic1   = models.CharField(max_length=512)
     weight1  = models.FloatField(default=0.0)

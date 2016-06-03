@@ -68,7 +68,7 @@ class Command(BaseCommand) :
                             (linenum, expected_number_of_fields, len(data))
                         continue
 
-                    a = articles[int(data[0])]
+                    a = articles[int(data[0])].id
 
                     tw = TopicWeights()
                     tw.article = a

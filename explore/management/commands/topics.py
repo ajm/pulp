@@ -18,6 +18,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from explore.models import Topic, Article, TopicWeight
 from sys import stderr, exit
+import numpy as np
 
 class Command(BaseCommand) :
     args = '<topic mapping file>'
@@ -63,7 +64,7 @@ class Command(BaseCommand) :
                         (linenum, expected_number_of_fields, len(data))
                     continue
 
-                topics.append([   int(data[i]) for i in range(2, (NUM_TOPICS_TO_STORE * 2) + 1, 2) ])
+                topics.append([    int(data[i]) for i in range(2, (NUM_TOPICS_TO_STORE * 2) + 1, 2) ])
                 weights.append([ float(data[i]) for i in range(3, (NUM_TOPICS_TO_STORE * 2) + 2, 2) ])
 
 
