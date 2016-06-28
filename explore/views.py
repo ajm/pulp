@@ -22,7 +22,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView # class-based views
 from rest_framework.decorators import api_view # for function-based views
 
-from explore.models import Article, ArticleTFIDF, Experiment, ExperimentIteration, ArticleFeedback, User, TopicWeight
+from explore.models import Article, ArticleTFIDF, Experiment, ExperimentIteration, ArticleFeedback, User, Topic
 from explore.serializers import ArticleSerializer
 from explore.utils import *
 
@@ -812,7 +812,15 @@ def experiment_ratings(request):
 
     return Response(status=status.HTTP_200_OK)
 
+print "loading topics..."
+topic_matrix = load_topics()
+print "loading topic weights..."
+weight_matrix = load_topicweights()
+
 def get_topics(articles, normalise=True) :
+    global topic_matrix
+    global weight_matrix
+
     result = []
 
     for a in articles :
@@ -821,13 +829,19 @@ def get_topics(articles, normalise=True) :
             'topics'        : []
           }
 
-        for tw in TopicWeights.objects.filter(article=a) :
-            tmp['topics'].extend([
-                { 'label' : tw.topic1, 'weight' : tw.weight1 },
-                { 'label' : tw.topic2, 'weight' : tw.weight2 },
-                { 'label' : tw.topic3, 'weight' : tw.weight3 },
-                { 'label' : tw.topic4, 'weight' : tw.weight4 },
-                { 'label' : tw.topic5, 'weight' : tw.weight5 } ])
+        id2topic = dict([ (t.id, t) for t in Topic.objects.filter(pk__in=topic_matrix[a.id - 1, :] + 1) ])
+
+        #for tw in TopicWeights.objects.filter(article=a) :
+        #    tmp['topics'].extend([
+        #        { 'label' : tw.topic1, 'weight' : tw.weight1 },
+        #        { 'label' : tw.topic2, 'weight' : tw.weight2 },
+        #        { 'label' : tw.topic3, 'weight' : tw.weight3 },
+        #        { 'label' : tw.topic4, 'weight' : tw.weight4 },
+        #        { 'label' : tw.topic5, 'weight' : tw.weight5 } ])
+
+        for t,w in zip(topic_matrix[a.id - 1, :], weight_matrix[a.id - 1, :]) :
+            tmp['topics'].append({ 'label'  : id2topic[t+1].label, 
+                                   'weight' : w })
 
         if normalise :
             weight_sum = sum([ t['weight'] for t in tmp['topics'] ])
