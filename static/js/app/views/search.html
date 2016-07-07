@@ -91,7 +91,7 @@
             <ul class="media-list search-results-list">
                 <li class="media selected-{{result.bookmarked}}" ng-repeat="result in results" in-view="article_in_view(result)">
                     <button data-toggle="tooltip" data-placement="top" title="Select this article" ng-click="toggle_bookmark(result)" class="pull-right btn btn-circle bookmark bookmark-{{result.bookmarked}}">
-                        <i class="fa fa-star"></i>
+                        <i class="fa fa-thumbs-o-{{result.bookmarked ? 'up' : 'down'}} fa-2x"></i>
                     </button>
                     <div class="media-body">
                         <a style="cursor: pointer" target="blank" ng-click="touch_article(result)" ng-class="{ 'clicked': result.clicked }"><h3 class="media-heading article-title" ng-bind-html="result.title"></h3></a>
