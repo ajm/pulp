@@ -28,6 +28,9 @@ SearchApp.service('Api', function($http, QueryService){
     return $http.get('/setup', { params: { participant_id: options.participant_id, 
                                            q: options.q,
                                            article_count: options.article_count,
+                                           model: options.model,
+                                           iteration_count: options.iteration_count,
+                                           knowledge_level: options.knowledge_level,
                                            //task_type: options.task_type, 
                                            exploration_rate: options.exploration_rate
                                            //experiment_id: options.study_type,

@@ -67,22 +67,29 @@ class Experiment(models.Model) :
 
     LOOKUP = 'L'
     EXPLORATORY = 'E'
+    CLASSIFIER = 'C'
+    REGRESSION = 'R'
     EXPERIMENT_TYPES = (
                 (LOOKUP,        'Lookup'),
-                (EXPLORATORY,   'Exploratory')
+                (EXPLORATORY,   'Exploratory'),
+                (CLASSIFIER,    'Classifier'),
+                (REGRESSION,    'Regression')
             )
 
     user                 = models.ForeignKey(User, blank=False)
     date                 = models.DateTimeField(auto_now=True)
 #    base_exploration_rate = models.FloatField(blank=False) # i.e. exploration_rate set in setup
-#    exploration_rate     = models.FloatField(default=0.0) # i.e. exploration_rate used in linrel
-    exploration_rate = models.FloatField(blank=False)
+    exploration_rate     = models.FloatField(default=0.0) # i.e. exploration_rate used in linrel
+#    exploration_rate = models.FloatField(blank=False)
 #    classifier           = models.BooleanField(default=False)
 #    task_type            = models.CharField(max_length=1, choices=EXPERIMENT_TYPES, blank=False)
 #    study_type           = models.PositiveIntegerField()
+    experiment_type     = models.CharField(max_length=1, choices=EXPERIMENT_TYPES, blank=False)
 
-    number_of_documents  = models.PositiveIntegerField()
+    number_of_documents  = models.PositiveIntegerField(default=0)
     number_of_iterations = models.PositiveIntegerField(default=0)
+    max_iterations       = models.PositiveIntegerField(default=0)
+    knowledge_level      = models.PositiveIntegerField(default=2)
     state                = models.CharField(max_length=1,
                                             choices=EXPERIMENT_STATES,
                                             default=RUNNING)

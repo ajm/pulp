@@ -14,7 +14,10 @@ SearchApp.controller('SettingsController', function($scope, $rootScope, $locatio
       participant_id: $rootScope.settings.participant_id,
       exploration_rate: $rootScope.settings.exploration_rate,
       q: $rootScope.settings.search_query,
-      article_count: $rootScope.settings.article_count
+      model: $rootScope.settings.model,
+      article_count: $rootScope.settings.article_count,
+      iteration_count: $rootScope.settings.query_iterations,
+      knowledge_level: $rootScope.settings.knowledge_level
       //task_type: $rootScope.settings.task_type,
       //study_type: $rootScope.settings.study_type
     }).success(function(){
