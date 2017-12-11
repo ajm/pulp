@@ -12,41 +12,27 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with PULP.  If not, see <http://www.gnu.org/licenses/>.
+import random
+import json  
+import time
+import os.path
+from math import log
 
 from django.db.models import Q
 from django.shortcuts import render
-
 from django.utils import timezone
 
 from rest_framework import status
 from rest_framework import generics
 from rest_framework.response import Response
-from rest_framework.views import APIView # class-based views
-from rest_framework.decorators import api_view # for function-based views
+from rest_framework.decorators import api_view
 
 from explore.models import Article, ArticleTFIDF, Experiment, ExperimentIteration, ArticleFeedback, User, TopicWeight
 from explore.serializers import ArticleSerializer
 from explore.utils import *
-
-from nltk.stem import SnowballStemmer
-from sklearn.preprocessing import normalize
-from scipy.sparse.linalg import spsolve
-
-import collections
-import sys
-import random
-import operator
-import numpy
-import json
-import time
-import os.path
-import datetime
-import re
-from math import log
-
-from exceptions import PulpException
-from reinforcementlearning import linrel
-from informationretrieval import okapi_bm25
+from explore.exceptions import PulpException
+from explore.reinforcementlearning import linrel
+from explore.informationretrieval import okapi_bm25
 
 
 print "loading sparse linrel..."
