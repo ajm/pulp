@@ -331,23 +331,44 @@ def textual_query(request) :
         print json.dumps(request.GET, sort_keys=True, indent=4, separators=(',', ': '))
 
         # get parameters from url
-        if 'q' not in request.GET or 'participant_id' not in request.GET :
+        if 'q' not in request.GET : #or 'participant_id' not in request.GET :
             return Response(status=status.HTTP_400_BAD_REQUEST)
-
+    
         query_string = request.GET['q']
-        participant_id = request.GET['participant_id']
-         
+        
+        # auto-user [1/3]
+        if ('participant_id' in request.GET) and request.GET['participant_id'] :
+            participant_id = request.GET['participant_id']
+        else :
+            request.session.flush()
+            participant_id = request.session.session_key
+
         # get user object
         try :
             user = User.objects.get(username=participant_id)
         except User.DoesNotExist :
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            # auto-user [2/3]
+            print "creating user '%s' ..." % participant_id
+            user = User()
+            user.username = participant_id
+            user.save()
+            #return Response(status=status.HTTP_400_BAD_REQUEST)
 
         # get experiment object
         e = get_experiment(user)
 
         if not e :
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            # auto-user [3/3]
+            e = Experiment()
+            e.user                  = user
+            e.experiment_type       = Experiment.EXPLORATORY
+            e.knowledge_level       = 1
+            e.base_exploration_rate = 1.0
+            e.number_of_documents   = int(request.GET['article-count'])
+            e.query                 = query_string
+            e.max_iterations        = 0
+            e.save()
+            #return Response(status=status.HTTP_400_BAD_REQUEST)
 
         num_articles = e.number_of_documents
 
@@ -468,16 +489,17 @@ def selection_query(request) :
 
         start_time = time.time()
 
-        if 'participant_id' not in post :
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+        # auto-user
+        if ('participant_id' in post) and post['participant_id'] :
+            participant_id = post['participant_id']
+        else :
+            participant_id = request.session.session_key
 
-        # get user object
-        participant_id = post['participant_id']
-                    
         try :
             user = User.objects.get(username=participant_id)
 
         except User.DoesNotExist :
+            print "user does not exist (%s) ..." % (participant_id)
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         # get experiment object
@@ -573,10 +595,10 @@ def end_search(request) :
     if request.method == 'POST' :
         post = json.loads(request.body)
 
-        if 'participant_id' not in post :
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-
-        participant_id = post['participant_id']
+        if ('participant_id' in post) and post['participant_id'] :
+            participant_id = post['participant_id']
+        else :
+            participant_id = request.session.session_key
 
         try :
             user = User.objects.get(username=participant_id)
