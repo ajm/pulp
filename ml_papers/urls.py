@@ -41,7 +41,6 @@ urlpatterns = patterns('',
     url(r'^search', views.index),
     url(r'^visualization', views.visualization),
     url(r'^setup', views.setup_experiment),
-    url(r'^ratings', views.experiment_ratings),
-    url(r'^topics', views.topics)
+    url(r'^ratings', views.experiment_ratings)
 )
 

@@ -1,0 +1,4 @@
+
+class PulpException(Exception) :
+    pass
+

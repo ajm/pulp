@@ -4,7 +4,7 @@ from scipy.sparse.linalg import spsolve
 import numpy as np
 from numpy import linalg
 
-def linrel(articles, feedback, data, start, n, from_date, to_date, mew=1.0, exploration_rate=1.0) :
+def linrel(articles, feedback, data, start_index, num_documents, mew=1.0, exploration_rate=1.0) :
     assert len(articles) == len(feedback), "articles and feedback are not the same length"
 
     num_articles,num_features = data.shape
@@ -29,8 +29,8 @@ def linrel(articles, feedback, data, start, n, from_date, to_date, mew=1.0, expl
         if i not in articles :
             top_n.append(i)
 
-        if len(top_n) == n :
+        if len(top_n) == (num_documents + start_index) :
             break
 
-    return top_n, None, None, None
+    return top_n[-num_documents:]
 
