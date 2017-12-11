@@ -44,6 +44,8 @@ import datetime
 import re
 from math import log
 
+from reinforcementlearning import linrel
+
 #from profilehooks import profile, coverage, timecall
 
 
@@ -164,110 +166,7 @@ def get_articles_bm25(exp, start_index, num_articles) : #query_terms, n, from_da
 
 print "loading sparse linrel..."
 X = load_sparse_linrel()
-
-def linrel(articles, feedback, data, start, n, from_date, to_date, mew=1.0, exploration_rate=1.0) :
-    assert len(articles) == len(feedback), "articles and feedback are not the same length"
-
-    X = data
-
-    num_articles = X.shape[0]
-    num_features = X.shape[1]
-
-    X_t = X[ numpy.array(articles) ]
-    X_tt = X_t.transpose()
-
-    I = mew * scipy.sparse.identity(num_features, format='dia')
-
-    W = spsolve((X_tt * X_t) + I, X_tt)
-    A = X * W
-
-    Y_t = numpy.matrix(feedback).transpose()
-
-    tmpA = numpy.array(A.todense())
-    normL2 = numpy.matrix(numpy.sqrt(numpy.sum(tmpA * tmpA, axis=1))).transpose()
-
-    # W * Y_t is the keyword weights
-    K = W * Y_t
-
-    mean = A * Y_t
-    variance = (exploration_rate / 2.0) * normL2
-    I_t = mean + variance
-
-
-    linrel_ordered = numpy.argsort(I_t.transpose()[0]).tolist()[0]
-    top_n = []
-
-    for i in linrel_ordered[::-1] :
-        #if i not in articles :
-        if (i not in articles) and ((not TIMESTAMPS) or (from_date < TIMESTAMPS[i] <= to_date)) :
-            top_n.append(i)
-
-        if len(top_n) == (start + n) :
-            break
-
-    top_n = top_n[-n:]
-
-    return top_n, \
-           mean[ numpy.array(top_n) ].transpose().tolist()[0], \
-           variance[ numpy.array(top_n) ].transpose().tolist()[0], \
-           K
-
-def linrel_positive_feedback_only(articles, feedback, data, start, n, from_date, to_date, mew=1.0, exploration_rate=1.0) :
-    assert len(articles) == len(feedback), "articles and feedback are not the same length"
-
-    X = data
-
-    num_articles = X.shape[0]
-    num_features = X.shape[1]
-
-    positive_articles = [ articles[i] for i,fb in enumerate(feedback) if fb == 1 ]
-
-    print feedback
-    print positive_articles
-
-    if len(positive_articles) < 2 :
-        raise PulpException("need feedback on 2 or more articles for linrel to work with only positive feedback, %d provided" % (len(positive_articles)))
-
-    #X_t = X[ numpy.array(articles) ]
-    X_t = X[ numpy.array(positive_articles) ]
-    X_tt = X_t.transpose()
-
-    I = mew * scipy.sparse.identity(num_features, format='dia')
-
-    W = spsolve((X_tt * X_t) + I, X_tt)
-    A = X * W
-
-    #Y_t = numpy.matrix(feedback).transpose()
-    Y_t = numpy.matrix([1] * int(sum(feedback))).transpose()
-
-    tmpA = numpy.array(A.todense())
-    normL2 = numpy.matrix(numpy.sqrt(numpy.sum(tmpA * tmpA, axis=1))).transpose()
-
-    # W * Y_t is the keyword weights
-    K = W * Y_t 
-
-    mean = A * Y_t
-    variance = (exploration_rate / 2.0) * normL2
-    I_t = mean + variance
-
-
-    linrel_ordered = numpy.argsort(I_t.transpose()[0]).tolist()[0]
-    top_n = []
-
-    for i in linrel_ordered[::-1] :
-        #if i not in articles :
-        if (i not in articles) and ((not TIMESTAMPS) or (from_date < TIMESTAMPS[i] <= to_date)) :
-            top_n.append(i)
-
-        if len(top_n) == (start + n) :
-            break
-
-    top_n = top_n[-n:]
-
-    return top_n, \
-           mean[ numpy.array(top_n) ].transpose().tolist()[0], \
-           variance[ numpy.array(top_n) ].transpose().tolist()[0], \
-           K
+print "done"
 
 def get_keyword_stats(articles, keyword_weights) :
 
@@ -357,10 +256,10 @@ def get_top_articles_linrel(e, start, count, exploration) :
     # everything comes out of the database sorted by id...
     tmp = dict([ (a.id, a) for a in articles_new_obj ])
 
-    return [ tmp[id] for id in articles_new_dbid ], \
-           get_keyword_stats(articles_new_obj, kw_weights), \
-           get_article_stats(articles_new_dbid, mean, variance), \
-           get_stems(articles_new_obj)
+    return [ tmp[id] for id in articles_new_dbid ], None, None, None
+#           get_keyword_stats(articles_new_obj, kw_weights), \
+#           get_article_stats(articles_new_dbid, mean, variance), \
+#           get_stems(articles_new_obj)
 
 def get_running_experiments(user) :
     return Experiment.objects.filter(user=user, state=Experiment.RUNNING)
@@ -632,9 +531,9 @@ def selection_query(request) :
         serializer = ArticleSerializer(rand_articles, many=True)
         article_data = serializer.data
         for i in article_data :
-            mean,var = article_stats[i['id']]
-            i['mean'] = mean
-            i['variance'] = var
+            #mean,var = article_stats[i['id']]
+            i['mean'] = None #mean
+            i['variance'] = None #var
 
         print time.time() - start_time
 
