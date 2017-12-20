@@ -18,6 +18,7 @@ import scipy
 import os
 import string
 import json
+from os.path import exists
 from subprocess import Popen, PIPE, STDOUT
 
 from nltk.corpus import stopwords
@@ -36,6 +37,7 @@ def save_sparse(m, prefix) :
     numpy.save(prefix + '.indices.npy',  m.indices)
     numpy.save(prefix + '.indptr.npy',   m.indptr)
     numpy.save(prefix + '.shape.npy',    m.shape)
+    print "saved %s sparse matrix" % prefix
 
 def load_sparse(prefix) :
     return scipy.sparse.csr_matrix((numpy.load(prefix + '.data.npy'), 
@@ -43,9 +45,13 @@ def load_sparse(prefix) :
                                     numpy.load(prefix + '.indptr.npy')), 
                                     shape=tuple(numpy.load(prefix + '.shape.npy')))
 
+def exists_sparse(prefix) :
+    return all([ exists(prefix + i) for i in ('.data.npy','.indices.npy','.indptr.npy','.shape.npy') ])
+
 def save_features(m, fname) :
     with open(fname, 'w') as f :
         json.dump(m, f)
+    print "saved %s features" % fname
 
 def load_features(fname) :
     with open(fname) as f :

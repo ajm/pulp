@@ -35,9 +35,13 @@ from explore.reinforcementlearning import linrel
 from explore.informationretrieval import okapi_bm25
 
 
-print "loading sparse linrel..."
-X = load_sparse_linrel()
+print "pre-loading matrices..."
+linrel_data = load_sparse_linrel()
+bm25_data = load_sparse_bm25()
+bm25_features = load_features_bm25()
 DEFAULT_NUM_ARTICLES = 20
+DYNAMIC_SUBSET = True
+print "pre-loading done!"
 
 class GetArticle(generics.RetrieveAPIView) :
     queryset = Article.objects.all()
@@ -48,30 +52,34 @@ def logout_view(request):
     #logout(request)
     return Response(status=status.HTTP_200_OK)
 
-def get_documents(articles_npid, correction=0) :
-    articles_dbid = [ i + correction for i in articles_npid ] # database is 1-indexed, numpy is 0-indexed
+def get_documents(articles_npid) :
+    articles_dbid = [ i + 1 for i in articles_npid ] # database is 1-indexed, numpy is 0-indexed
     id2article = dict([ (a.id, a) for a in Article.objects.filter(pk__in=articles_dbid) ])
     return [ id2article[i] for i in articles_dbid ]
 
 def get_top_articles_linrel(e, start, count) :
-    global X
+    global linrel_data
+    global DYNAMIC_SUBSET
 
     articles_obj = ArticleFeedback.objects.filter(experiment=e).exclude(selected=None)
     articles_npid = [ a.article.id - 1 for a in articles_obj ] # database is 1-indexed, numpy is 0-indexed
     feedback = [ 1.0 if a.selected else 0.0 for a in articles_obj ]
-    data = X
 
     articles_npid = linrel(articles_npid,
                            feedback,
-                           data,
+                           linrel_data,
                            start,
                            count,
-                           exploration_rate=e.exploration_rate)
+                           e.query, # new
+                           exploration_rate=e.exploration_rate,
+                           use_subset=DYNAMIC_SUBSET)
 
-    return get_documents(articles_npid, 1)
+    return get_documents(articles_npid)
 
 def get_top_articles_okapibm25(e, start, count) :
-    return get_documents(okapi_bm25(e.query, start, count))
+    global bm25_data, bm25_features, linrel_data
+    global DYNAMIC_SUBSET
+    return get_documents(okapi_bm25(e.query, start, count, bm25_data, bm25_features, linrel_data, use_subset=DYNAMIC_SUBSET))
 
 def classifier(e, post) :
     query_length = len(e.query.strip().split())
